@@ -2,768 +2,1369 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Job Application Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Job Application Automation Portal</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <style>
-  *{box-sizing:border-box;}
-  body{
-    font-family:'Segoe UI', Roboto, Arial, sans-serif;
-    background:#eef1f5;
-    min-height:100vh;
-    margin:0;
-    padding:30px 15px;
-    color:#2c3344;
+:root{
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --border:#e5e9f2;
+  --border-strong:#cfd6e4;
+  --primary:#4f46e5;
+  --primary-dark:#4338ca;
+  --primary-soft:#eef0ff;
+  --accent:#06b6d4;
+  --secondary:#0f172a;
+  --text:#1e293b;
+  --muted:#64748b;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --warn:#d97706;
+  --radius:16px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 2px 8px rgba(15,23,42,.04);
+  --shadow-md:0 4px 12px rgba(15,23,42,.06),0 12px 32px rgba(15,23,42,.06);
+  --grad:linear-gradient(135deg,#4f46e5 0%,#7c3aed 55%,#06b6d4 130%);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(900px 400px at 10% -5%, rgba(79,70,229,.10), transparent 60%),
+    radial-gradient(800px 380px at 95% 0%, rgba(6,182,212,.10), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:'Hind Siliguri','Inter','Segoe UI',Roboto,Arial,sans-serif;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:56px;
+}
+.container{
+  max-width:880px;
+  margin:0 auto;
+  padding:20px 16px;
+}
+
+/* ===== Banner ===== */
+.banner{
+  padding:12px 16px;
+  text-align:center;
+  font-size:14px;
+  font-weight:600;
+  position:sticky;
+  top:0;
+  z-index:100;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(0,0,0,.05);
+  box-shadow:0 4px 18px rgba(15,23,42,.08);
+}
+.banner.ok{background:rgba(220,252,231,.92);color:#166534;}
+.banner.err{background:rgba(254,226,226,.94);color:#991b1b;}
+.banner.loading{background:rgba(224,231,255,.94);color:#3730a3;}
+
+/* ===== Hero header ===== */
+header.main{
+  text-align:center;
+  padding:42px 20px 38px;
+  margin:6px 0 26px;
+  border-radius:24px;
+  background:var(--grad);
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 18px 40px rgba(79,70,229,.28);
+}
+header.main::before,
+header.main::after{
+  content:'';
+  position:absolute;
+  border-radius:50%;
+  background:rgba(255,255,255,.12);
+  pointer-events:none;
+}
+header.main::before{width:260px;height:260px;top:-110px;right:-70px;}
+header.main::after{width:180px;height:180px;bottom:-90px;left:-50px;background:rgba(255,255,255,.09);}
+header.main h1{
+  margin:0;
+  font-size:29px;
+  font-weight:700;
+  letter-spacing:-.3px;
+  color:#fff;
+  position:relative;
+  z-index:1;
+}
+header.main p{
+  color:rgba(255,255,255,.88);
+  font-size:15.5px;
+  margin:10px auto 0;
+  max-width:520px;
+  position:relative;
+  z-index:1;
+}
+
+/* ===== Cards ===== */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:26px;
+  margin-bottom:20px;
+  box-shadow:var(--shadow-sm);
+  transition:box-shadow .25s ease, transform .25s ease;
+  position:relative;
+}
+.card:hover{box-shadow:var(--shadow-md);}
+.card h2{
+  font-size:18px;
+  font-weight:700;
+  margin:0 0 16px;
+  padding-bottom:12px;
+  color:var(--secondary);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border-bottom:1px solid var(--border);
+  position:relative;
+}
+.card h2::after{
+  content:'';
+  position:absolute;
+  left:0;bottom:-1px;
+  width:56px;height:3px;
+  border-radius:3px;
+  background:var(--grad);
+}
+details.card summary{
+  font-size:16.5px;
+  font-weight:700;
+  color:var(--secondary);
+  cursor:pointer;
+  list-style:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+}
+details.card summary::-webkit-details-marker{display:none;}
+details.card summary::before{
+  content:'▶';
+  font-size:10px;
+  width:22px;height:22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:var(--primary-soft);
+  color:var(--primary);
+  transition:transform .2s;
+}
+details.card[open] summary::before{
+  transform:rotate(90deg);
+}
+details.card .inner{margin-top:18px;}
+
+/* ===== Form controls ===== */
+label{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  color:#334155;
+  margin:14px 0 6px;
+  letter-spacing:.1px;
+}
+textarea, input[type=text], input[type=email], select{
+  width:100%;
+  padding:12px 14px;
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  font-size:15px;
+  font-family:inherit;
+  color:var(--text);
+  background:#f9fafc;
+  transition:border-color .2s, box-shadow .2s, background .2s;
+}
+textarea::placeholder, input::placeholder{color:#94a3b8;}
+textarea{resize:vertical;}
+textarea:hover, input:hover, select:hover{border-color:var(--border-strong);}
+textarea:focus, input:focus, select:focus{
+  outline:none;
+  border-color:var(--primary);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(79,70,229,.14);
+}
+.row{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.row > div{flex:1;min-width:150px;}
+
+/* ===== Buttons ===== */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:11px 20px;
+  border:none;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:600;
+  font-family:inherit;
+  cursor:pointer;
+  background:var(--grad);
+  color:#fff;
+  margin-top:12px;
+  margin-right:8px;
+  box-shadow:0 6px 16px rgba(79,70,229,.28);
+  transition:transform .15s ease, box-shadow .2s ease, filter .2s ease, background .2s;
+}
+.btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 22px rgba(79,70,229,.36);
+  filter:brightness(1.05);
+}
+.btn:active{transform:translateY(0);box-shadow:0 3px 8px rgba(79,70,229,.3);}
+.btn.secondary{
+  background:linear-gradient(135deg,#1e293b,#334155);
+  box-shadow:0 6px 16px rgba(15,23,42,.22);
+}
+.btn.secondary:hover{box-shadow:0 10px 22px rgba(15,23,42,.32);}
+.btn.outline{
+  background:#fff;
+  color:var(--primary);
+  border:1.5px solid #c7cbf7;
+  box-shadow:none;
+}
+.btn.outline:hover{
+  background:var(--primary-soft);
+  border-color:var(--primary);
+  box-shadow:0 6px 14px rgba(79,70,229,.14);
+}
+.btn:disabled{
+  background:#e2e8f0 !important;
+  color:#94a3b8 !important;
+  cursor:not-allowed;
+  border-color:#e2e8f0 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  filter:none !important;
+}
+.btn-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.btn-group .btn{margin-right:0;}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.6;}
+
+/* ===== Alerts / status ===== */
+.warn-box{
+  background:linear-gradient(135deg,#fffbeb,#fef3c7);
+  border:1px solid #fde68a;
+  border-left:4px solid var(--warn);
+  color:#92400e;
+  padding:14px 16px;
+  border-radius:10px;
+  font-size:13.5px;
+  margin-top:12px;
+  display:none;
+}
+.spinner{
+  display:inline-block;
+  width:14px;height:14px;
+  border:2px solid #fff;
+  border-top-color:transparent;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  margin-right:6px;
+  vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.cover-text{
+  font-family:'Lora',Georgia,'Times New Roman',serif;
+  font-size:15px;
+  line-height:1.75;
+  min-height:300px;
+  background:#fffefb;
+  padding:18px 20px;
+}
+.status-text{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:8px;
+  min-height:16px;
+  font-weight:500;
+}
+
+/* ===== Upload zone ===== */
+.file-input-wrap{
+  border:2px dashed #c7cbf7;
+  border-radius:14px;
+  padding:26px 16px;
+  text-align:center;
+  background:linear-gradient(180deg,#fafaff,#f3f5ff);
+  cursor:pointer;
+  color:var(--primary-dark);
+  font-weight:600;
+  font-size:14.5px;
+  transition:all .2s ease;
+}
+.file-input-wrap:hover{
+  border-color:var(--primary);
+  background:var(--primary-soft);
+  transform:translateY(-1px);
+  box-shadow:0 8px 20px rgba(79,70,229,.12);
+}
+.file-input-wrap input{display:none;}
+.section-divider{
+  border:none;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--border-strong),transparent);
+  margin:22px 0;
+}
+
+/* ===== Model chips ===== */
+.model-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+.model-chip{
+  padding:7px 14px;
+  border:1.5px solid var(--border);
+  border-radius:999px;
+  font-size:12.5px;
+  font-weight:500;
+  cursor:pointer;
+  background:#f8fafc;
+  color:var(--text);
+  transition:all .15s ease;
+}
+.model-chip:hover{background:var(--primary-soft);border-color:var(--primary);}
+.model-chip.active{
+  background:var(--grad);
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 4px 12px rgba(79,70,229,.3);
+}
+.current-model-badge{
+  display:inline-block;
+  background:var(--primary-soft);
+  color:var(--primary-dark);
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:12.5px;
+  font-weight:700;
+  margin-bottom:10px;
+  border:1px solid #d9dcfb;
+}
+
+/* ===== Entrance animation ===== */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(14px);}
+  to{opacity:1;transform:translateY(0);}
+}
+header.main, .card{animation:fadeUp .55s ease both;}
+.card:nth-of-type(2){animation-delay:.05s;}
+.card:nth-of-type(3){animation-delay:.1s;}
+.card:nth-of-type(4){animation-delay:.15s;}
+.card:nth-of-type(5){animation-delay:.2s;}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px;border:2px solid var(--bg);}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+
+@media(max-width:600px){
+  .container{padding:12px;}
+  header.main{padding:30px 16px 28px;border-radius:18px;}
+  header.main h1{font-size:21px;}
+  header.main p{font-size:14px;}
+  .card{padding:18px;border-radius:14px;}
+  .card h2{font-size:16.5px;}
+  .btn{
+    width:100%;
+    margin-right:0;
   }
-  .container{max-width:880px;margin:0 auto;}
-  .header{text-align:center;margin-bottom:26px;}
-  .header h1{margin:0;font-size:24px;color:#1a2238;font-weight:700;}
-  .header p{color:#667;margin-top:6px;font-size:13.5px;}
-
-  .card{
-    background:#fff;border-radius:10px;padding:22px 24px;
-    margin-bottom:18px;border:1px solid #e3e7ed;
-    box-shadow:0 1px 3px rgba(0,0,0,0.04);
-  }
-  .card-title{
-    font-size:15.5px;font-weight:700;color:#1a2238;
-    margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #eef0f3;
-    display:flex;align-items:center;gap:8px;
-  }
-  .card-title .dot{width:8px;height:8px;border-radius:50%;background:#2563eb;display:inline-block;flex-shrink:0;}
-
-  label{display:block;font-size:12.5px;font-weight:600;color:#5a6472;margin:10px 0 5px;}
-  input[type=text], input[type=email], textarea, select{
-    width:100%;padding:10px 12px;border:1px solid #d7dce3;border-radius:7px;
-    font-size:14px;box-sizing:border-box;font-family:inherit;color:#2c3344;
-    background:#fbfcfd;
-  }
-  input:focus, textarea:focus{outline:none;border-color:#2563eb;background:#fff;}
-  textarea{resize:vertical;}
-  #coverLetter{font-family:'Georgia', 'Times New Roman', serif;line-height:1.6;}
-  .row{display:flex;gap:14px;flex-wrap:wrap;}
-  .row > div{flex:1;min-width:220px;}
-
-  button{cursor:pointer;border:none;border-radius:7px;padding:10px 16px;font-size:13.5px;font-weight:600;transition:0.15s;}
-  .btn-primary{background:#2563eb;color:#fff;}
-  .btn-primary:hover{background:#1d4ed8;}
-  .btn-secondary{background:#334155;color:#fff;}
-  .btn-secondary:hover{background:#1e293b;}
-  .btn-outline{background:#fff;color:#2563eb;border:1px solid #cfd9ec;}
-  .btn-outline:hover{background:#f0f5ff;}
-  .full-width{width:100%;margin:8px 0;}
-
-  .status{margin-top:10px;padding:9px 12px;border-radius:7px;font-size:12.5px;display:none;}
-  .status.show{display:block;}
-  .status.loading{background:#fff8e1;color:#8a6d00;}
-  .status.success{background:#e8f8ee;color:#1e7e34;}
-  .status.error{background:#fdecea;color:#b02a2a;}
-
-  .provider-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
-  .provider-tab{padding:7px 14px;border-radius:7px;background:#f1f3f6;cursor:pointer;font-size:12.5px;font-weight:600;color:#5a6472;}
-  .provider-tab.active{background:#2563eb;color:#fff;}
-  .model-btn{background:#eef3ff;border:1px solid #cfd9ec;border-radius:6px;padding:5px 9px;margin:3px;font-size:11.5px;cursor:pointer;color:#2c3344;}
-  .small-note{font-size:11.5px;color:#8891a0;margin-top:6px;line-height:1.5;}
-  details summary{cursor:pointer;font-weight:700;color:#334155;padding:4px 0;font-size:14px;}
-  hr.sep{border:none;border-top:1px solid #eef0f3;margin:18px 0;}
-  .btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
-  .section-sub{font-size:12px;color:#8891a0;margin-bottom:10px;}
-
-  /* ===== MOBILE FRIENDLY ===== */
-  @media (max-width:600px){
-    body{padding:14px 8px;}
-    .card{padding:16px 14px;border-radius:8px;}
-    .header h1{font-size:19px;}
-    .header p{font-size:12px;}
-    .card-title{font-size:14px;}
-    label{font-size:12px;}
-    input[type=text], input[type=email], textarea{font-size:16px;padding:9px 10px;}
-    .row{flex-direction:column;gap:0;}
-    .row > div{min-width:100%;}
-    button{font-size:13px;padding:11px 14px;width:100%;}
-    .btn-group{flex-direction:column;}
-    .provider-tabs{gap:5px;}
-    .provider-tab{flex:1;text-align:center;font-size:11.5px;padding:7px 6px;}
-  }
+  .btn-group{flex-direction:column;}
+  input, select, textarea{font-size:16px !important;}
+  .row{flex-direction:column;}
+}
 </style>
 </head>
 <body>
 
+<div id="globalBanner" class="banner loading">⏳ সিস্টেম লোড হচ্ছে...</div>
+
 <div class="container">
+  <header class="main">
+    <h1>📄 Job Application Automation Portal</h1>
+    <p>জব সার্কুলার ও CV থেকে অটো কভার লেটার ও মেইল তৈরি করুন</p>
+  </header>
 
-  <div class="header">
-    <h1>Job Application Portal</h1>
-    <p>জব সার্কুলার ও CV বিশ্লেষণ করে Cover Letter এবং HR-কে পাঠানোর মেইল তৈরি করুন</p>
-  </div>
+  <!-- AI MODEL SETTINGS (OPTIONAL, USER-SIDE) -->
+  <details class="card">
+    <summary>⚙️ AI Model সেটিংস (ঐচ্ছিক)</summary>
+    <div class="inner">
+      <p class="hint">API Key কেন্দ্রীয়ভাবে ব্যবস্থাপনা করা হয় — আপনাকে কিছু করতে হবে না। তবে চাইলে আপনার পছন্দের Gemini মডেল বেছে নিতে পারেন। এই সেটিং শুধু আপনার ব্রাউজারে প্রযোজ্য হবে।</p>
 
-  <!-- ===================== API SETUP ===================== -->
-  <div class="card">
-    <details>
-      <summary>⚙ AI Provider / API Key সেটআপ</summary>
-      <div style="margin-top:14px;">
-        <div class="provider-tabs">
-          <div class="provider-tab active" id="tab_gemini" onclick="switchProvider('gemini')">Gemini (ফ্রি)</div>
-          <div class="provider-tab" id="tab_openrouter" onclick="switchProvider('openrouter')">OpenRouter</div>
-          <div class="provider-tab" id="tab_openai" onclick="switchProvider('openai')">OpenAI</div>
-        </div>
+      <div class="current-model-badge" id="currentModelBadge">বর্তমান মডেল: লোড হচ্ছে...</div>
 
-        <div id="panel_gemini" class="provider-panel">
-          <label>Gemini API Key (aistudio.google.com/app/apikey থেকে নিন)</label>
-          <input type="text" id="apiKey_gemini" placeholder="AIza...">
-          <label>Model Name</label>
-          <input type="text" id="geminiModelInput" placeholder="gemini-2.0-flash" value="gemini-2.0-flash">
-          <div class="btn-group">
-            <button class="btn-primary" onclick="saveApiKey('gemini')">সেভ করুন</button>
-            <button class="btn-outline" onclick="listGeminiModels()">কোন মডেল কাজ করে দেখুন</button>
-          </div>
-          <div id="geminiModelsBox" class="small-note"></div>
-        </div>
+      <label>Model Name</label>
+      <input type="text" id="modelNameInput" placeholder="যেমন: gemini-2.0-flash">
 
-        <div id="panel_openrouter" class="provider-panel" style="display:none;">
-          <label>OpenRouter API Key</label>
-          <input type="text" id="apiKey_openrouter" placeholder="sk-or-...">
-          <button class="btn-primary" style="margin-top:10px;" onclick="saveApiKey('openrouter')">সেভ করুন</button>
-        </div>
-
-        <div id="panel_openai" class="provider-panel" style="display:none;">
-          <label>OpenAI API Key</label>
-          <input type="text" id="apiKey_openai" placeholder="sk-...">
-          <button class="btn-primary" style="margin-top:10px;" onclick="saveApiKey('openai')">সেভ করুন</button>
-        </div>
-
-        <button class="btn-outline full-width" onclick="testApiConnection()">কানেকশন টেস্ট করুন</button>
-        <div id="apiTestStatus" class="status"></div>
+      <div class="btn-group">
+        <button class="btn outline" onclick="listAvailableModels()">📋 কোন মডেল কাজ করে দেখুন</button>
+        <button class="btn" onclick="saveModelPreference()">💾 সেভ করুন</button>
+        <button class="btn secondary" onclick="testModelConnection()">🔌 কানেকশন টেস্ট করুন</button>
+        <button class="btn outline" onclick="resetModelPreference()">↩️ ডিফল্টে ফিরুন</button>
       </div>
-    </details>
-  </div>
 
-  <!-- ===================== JOB CIRCULAR ===================== -->
+      <div class="status-text" id="modelSettingsStatus"></div>
+      <div class="model-list" id="modelList"></div>
+    </div>
+  </details>
+
+  <!-- JOB CIRCULAR -->
   <div class="card">
-    <div class="card-title"><span class="dot"></span>জব সার্কুলার</div>
+    <h2>১. জব সার্কুলার</h2>
     <label>জব সার্কুলার টেক্সট পেস্ট করুন</label>
     <textarea id="jobText" rows="6" placeholder="এখানে জব সার্কুলারের টেক্সট পেস্ট করুন..."></textarea>
-    <label>অথবা, জব সার্কুলারের ছবি আপলোড করুন (OCR)</label>
-    <input type="file" id="jobImageInput" accept="image/*" onchange="handleJobImage(event)">
-    <div id="jobOcrStatus" class="status"></div>
-  </div>
 
-  <!-- ===================== CV UPLOAD ===================== -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>আপনার CV আপলোড করুন (PDF)</div>
-    <input type="file" id="cvFileInput" accept="application/pdf" onchange="handleCvUpload(event)">
-    <div id="cvStatus" class="status"></div>
-  </div>
+    <hr class="section-divider">
 
-  <!-- ===================== ANALYZE BUTTON ===================== -->
-  <div class="card" style="text-align:center;">
-    <button class="btn-secondary full-width" style="padding:13px;font-size:14.5px;" onclick="analyzeWithAI()">
-      AI দিয়ে বিশ্লেষণ করুন (Job + CV)
-    </button>
-    <div id="analyzeStatus" class="status"></div>
-  </div>
-
-  <!-- ===================== JOB INFO (editable) ===================== -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>জব তথ্য (প্রয়োজনে ঠিক করুন)</div>
+    <label>অথবা জব সার্কুলারের ছবি আপলোড করুন (OCR)</label>
     <div class="row">
       <div>
-        <label>কোম্পানির নাম</label>
-        <input type="text" id="companyName">
+        <label>ভাষা</label>
+        <select id="ocrLanguage">
+          <option value="eng" selected>English</option>
+          <option value="ben">বাংলা</option>
+          <option value="eng+ben">English + বাংলা</option>
+        </select>
       </div>
       <div>
-        <label>পজিশন</label>
-        <input type="text" id="positionName">
+        <label>লেআউট মোড</label>
+        <select id="ocrPsm">
+          <option value="3" selected>Auto (সাধারণ)</option>
+          <option value="6">Single Block</option>
+          <option value="4">Column-wise</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="file-input-wrap" onclick="document.getElementById('jobImageInput').click()">
+      📷 ক্লিক করে ছবি সিলেক্ট করুন
+      <input type="file" id="jobImageInput" accept="image/*" onchange="handleJobImage(event)">
+    </div>
+    <div class="status-text" id="ocrStatus"></div>
+    <div class="warn-box" id="ocrWarnBox">
+      ⚠️ টেক্সট কম/অস্পষ্ট এসেছে। ছবি স্পষ্ট কিনা দেখুন অথবা ভাষা/লেআউট মোড পাল্টে আবার চেষ্টা করুন।
+      <br><button class="btn outline" style="margin-top:8px;" onclick="retryOCR()">🔄 আবার চেষ্টা করুন</button>
+    </div>
+  </div>
+
+  <!-- CV UPLOAD -->
+  <div class="card">
+    <h2>২. আপনার CV আপলোড করুন (PDF)</h2>
+    <div class="file-input-wrap" onclick="document.getElementById('cvInput').click()">
+      📎 ক্লিক করে CV (PDF) সিলেক্ট করুন
+      <input type="file" id="cvInput" accept="application/pdf" onchange="handleCvUpload(event)">
+    </div>
+    <div class="status-text" id="cvStatus"></div>
+  </div>
+
+  <!-- ANALYZE -->
+  <div class="card">
+    <h2>৩. AI দিয়ে বিশ্লেষণ করুন</h2>
+    <p class="hint">জব সার্কুলার ও CV উভয় থেকে তথ্য স্বয়ংক্রিয়ভাবে বের করতে নিচের বাটনে ক্লিক করুন।</p>
+    <button class="btn" id="analyzeBtn" onclick="analyzeWithAI()" disabled>🔍 বিশ্লেষণ করুন</button>
+    <div class="status-text" id="analyzeStatus"></div>
+  </div>
+
+  <!-- JOB INFO -->
+  <div class="card">
+    <h2>৪. জব তথ্য</h2>
+    <div class="row">
+      <div>
+        <label>Company</label>
+        <input type="text" id="jobCompany">
+      </div>
+      <div>
+        <label>Position</label>
+        <input type="text" id="jobPosition">
       </div>
     </div>
     <div class="row">
       <div>
         <label>HR Email</label>
-        <input type="email" id="hrEmail">
+        <input type="email" id="jobEmail">
       </div>
       <div>
-        <label>প্রয়োজনীয় অভিজ্ঞতা</label>
-        <input type="text" id="experienceRequired">
+        <label>Location</label>
+        <input type="text" id="jobLocation">
       </div>
     </div>
-    <label>কোম্পানির অবস্থান (ঐচ্ছিক, যেমন: Dhaka)</label>
-    <input type="text" id="companyLocation">
     <label>Requirements</label>
-    <textarea id="requirementsText" rows="3"></textarea>
+    <textarea id="jobRequirements" rows="3"></textarea>
+    <label>Experience Required</label>
+    <input type="text" id="jobExperience">
   </div>
 
-  <!-- ===================== CANDIDATE INFO (editable) ===================== -->
+  <!-- CANDIDATE INFO -->
   <div class="card">
-    <div class="card-title"><span class="dot"></span>আপনার তথ্য (প্রয়োজনে ঠিক করুন)</div>
+    <h2>৫. আপনার তথ্য</h2>
     <div class="row">
       <div>
-        <label>নাম</label>
-        <input type="text" id="candidateName">
+        <label>Name</label>
+        <input type="text" id="candName">
       </div>
       <div>
-        <label>ডিজিগনেশন</label>
-        <input type="text" id="candidateDesignation">
+        <label>Designation</label>
+        <input type="text" id="candDesignation">
       </div>
     </div>
     <div class="row">
       <div>
-        <label>আপনার Email</label>
-        <input type="email" id="candidateEmail">
+        <label>Email</label>
+        <input type="email" id="candEmail">
       </div>
       <div>
-        <label>ফোন নম্বর</label>
-        <input type="text" id="candidatePhone">
+        <label>Phone</label>
+        <input type="text" id="candPhone">
       </div>
     </div>
-    <label>ঠিকানা</label>
-    <input type="text" id="candidateAddress">
-    <label>অভিজ্ঞতা</label>
-    <textarea id="candidateExperience" rows="2"></textarea>
-    <label>দক্ষতা (Skills)</label>
-    <textarea id="candidateSkills" rows="2"></textarea>
-    <label>শিক্ষাগত যোগ্যতা</label>
-    <textarea id="candidateEducation" rows="2"></textarea>
+    <label>Address</label>
+    <input type="text" id="candAddress">
+    <label>Experience</label>
+    <textarea id="candExperience" rows="2"></textarea>
+    <label>Skills</label>
+    <textarea id="candSkills" rows="2"></textarea>
+    <label>Education</label>
+    <textarea id="candEducation" rows="2"></textarea>
   </div>
 
-  <!-- ===================== COVER LETTER ===================== -->
+  <!-- COVER LETTER -->
   <div class="card">
-    <div class="card-title"><span class="dot"></span>Cover Letter</div>
-    <p class="section-sub">প্রফেশনাল ফরম্যাটে (Header + To + Subject + বডি + Sincerely) অটো তৈরি হবে, প্রয়োজনে এডিট করে PDF ডাউনলোড করুন।</p>
-    <button class="btn-primary" onclick="generateCoverLetterAI()">AI দিয়ে Cover Letter বানান</button>
-    <div id="coverLetterStatus" class="status"></div>
-    <label>Cover Letter (এডিট করতে পারবেন)</label>
-    <textarea id="coverLetter" rows="14"></textarea>
+    <h2>৬. Cover Letter</h2>
+    <button class="btn" id="genCoverBtn" onclick="generateCoverLetterAI()" disabled>✨ Cover Letter তৈরি করুন</button>
+    <div class="status-text" id="coverStatus"></div>
+    <label>Cover Letter (এডিট করা যাবে)</label>
+    <textarea id="coverLetter" class="cover-text" rows="18"></textarea>
     <div class="btn-group">
-      <button class="btn-outline" onclick="copyCoverLetter()">Cover Letter কপি করুন</button>
-      <button class="btn-secondary" onclick="downloadCoverLetterPDF()">📄 Cover Letter PDF ডাউনলোড</button>
-    </div>
-  </div>
-
-  <!-- ===================== EMAIL TO HR ===================== -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>HR-কে মেইল</div>
-    <p class="section-sub">এটা হলো সরাসরি HR-কে পাঠানো ছোট, প্রফেশনাল মেইল টেক্সট (Cover Letter থেকে আলাদা)।</p>
-    <button class="btn-primary" onclick="generateMailBodyAI()">AI দিয়ে মেইল লিখুন</button>
-    <div id="mailBodyStatus" class="status"></div>
-    <label>মেইলের টেক্সট (এডিট করতে পারবেন)</label>
-    <textarea id="mailBody" rows="9"></textarea>
-
-    <hr class="sep">
-
-    <div class="row">
-      <div>
-        <label>To (HR Email)</label>
-        <input type="email" id="toEmail">
-      </div>
-      <div>
-        <label>Subject</label>
-        <input type="text" id="subjectLine">
-      </div>
+      <button class="btn outline" onclick="copyCoverLetter()">📋 Cover Letter কপি করুন</button>
+      <button class="btn secondary" onclick="downloadCoverLetterPDF()">⬇️ Cover Letter PDF ডাউনলোড</button>
+      <button class="btn outline" onclick="downloadCV()">⬇️ CV ডাউনলোড</button>
     </div>
 
+    <hr class="section-divider">
+
+    <h2>✉️ HR-কে পাঠানোর মেইল</h2>
+    <button class="btn" id="genMailBtn" onclick="generateMailBodyAI()" disabled>✨ মেইল টেক্সট তৈরি করুন</button>
+    <div class="status-text" id="mailStatus"></div>
+
+    <label>To (HR Email)</label>
+    <input type="email" id="mailTo">
+    <label>Subject</label>
+    <input type="text" id="mailSubject">
+    <label>Mail Body (এডিট করা যাবে)</label>
+    <textarea id="mailBody" rows="10"></textarea>
+
     <div class="btn-group">
-      <button class="btn-secondary full-width" onclick="sendMail('gmail')">
-        📧 Gmail দিয়ে পাঠান (CV + Cover Letter অটো ডাউনলোড হবে)
-      </button>
+      <button class="btn outline" onclick="copyMailBody()">📋 মেইল বডি কপি করুন</button>
+      <button class="btn outline" onclick="copyToEmail()">📋 HR Email কপি করুন</button>
     </div>
     <div class="btn-group">
-      <button class="btn-outline full-width" onclick="sendMail('default')">অন্য মেইল অ্যাপ (Outlook ইত্যাদি) দিয়ে পাঠান</button>
+      <button class="btn" onclick="sendMail('gmail')">📧 Gmail দিয়ে পাঠান</button>
+      <button class="btn secondary" onclick="sendMail('default')">✉️ ডিফল্ট মেইল অ্যাপে পাঠান</button>
     </div>
-    <div class="btn-group">
-      <button class="btn-outline" onclick="copyMailBody()">মেইল টেক্সট কপি করুন</button>
-      <button class="btn-outline" onclick="copyToEmail()">HR Email কপি করুন</button>
-    </div>
-    <p class="small-note">* "Gmail দিয়ে পাঠান" চাপলে: (১) আপনার CV ও Cover Letter PDF অটো-ডাউনলোড হবে, (২) Gmail কম্পোজ উইন্ডো নতুন ট্যাবে খুলবে To/Subject/Body ভরা অবস্থায়। শুধু Gmail এর 📎 (Attach) আইকনে ক্লিক করে Downloads ফোল্ডার থেকে দুটো ফাইল সিলেক্ট করে Send চাপুন। (ব্রাউজার সিকিউরিটির কারণে কোনো ওয়েবসাইট থেকেই ফাইল সরাসরি অটো-অ্যাটাচ করা সম্ভব না — এটা সব ব্রাউজারের নিয়ম)।</p>
+    <p class="hint">⚠️ ক্লিক করলে শুধুমাত্র <b>Cover Letter PDF</b> অটো-ডাউনলোড হবে এবং মেইল কম্পোজ উইন্ডো খুলবে। CV আলাদাভাবে "⬇️ CV ডাউনলোড" বাটন দিয়ে ডাউনলোড করে নিন, এরপর দুটো ফাইলই ম্যানুয়ালি 📎 থেকে অ্যাটাচ করে দিতে হবে (ব্রাউজার সিকিউরিটির কারণে অটো-অ্যাটাচ সম্ভব না)।</p>
   </div>
 
 </div>
 
 <script>
-/* ========================= PDF.js WORKER ========================= */
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+/* ================= FIREBASE CONFIG ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCWfS92Fw5CzeZ6Qx2HzF8707Q-ZZ5MVCM",
+  authDomain: "job-portal-e429f.firebaseapp.com",
+  projectId: "job-portal-e429f",
+  storageBucket: "job-portal-e429f.firebasestorage.app",
+  messagingSenderId: "612926507742",
+  appId: "1:612926507742:web:68cbf752234c8cb176104f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-/* ========================= PROVIDER MANAGEMENT ========================= */
-let currentProvider = localStorage.getItem('currentProvider') || 'gemini';
+let GEMINI_KEY = "";
+let GEMINI_MODEL = "gemini-2.0-flash";
+let DEFAULT_REMOTE_MODEL = "gemini-2.0-flash";
+let CONFIG_READY = false;
 
-function switchProvider(provider){
-  currentProvider = provider;
-  localStorage.setItem('currentProvider', provider);
-  document.querySelectorAll('.provider-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('tab_'+provider).classList.add('active');
-  document.querySelectorAll('.provider-panel').forEach(p=>p.style.display='none');
-  document.getElementById('panel_'+provider).style.display='block';
+let uploadedCvFile = null;
+let uploadedCvBlobUrl = null;
+let lastOcrImageDataUrl = null;
+
+const LOCAL_MODEL_KEY = 'preferredGeminiModel';
+
+function setBanner(type, text){
+  const b = document.getElementById('globalBanner');
+  b.className = 'banner ' + type;
+  b.textContent = text;
 }
 
-function saveApiKey(provider){
-  const key = document.getElementById('apiKey_'+provider).value.trim();
-  localStorage.setItem('apiKey_'+provider, key);
-  if(provider==='gemini'){
-    const model = document.getElementById('geminiModelInput').value.trim();
-    if(model) localStorage.setItem('geminiModel', model);
-  }
-  alert('সেভ হয়েছে!');
+function setButtonsEnabled(enabled){
+  document.getElementById('analyzeBtn').disabled = !enabled;
+  document.getElementById('genCoverBtn').disabled = !enabled;
+  document.getElementById('genMailBtn').disabled = !enabled;
 }
 
-window.addEventListener('DOMContentLoaded', ()=>{
-  ['gemini','openrouter','openai'].forEach(p=>{
-    const saved = localStorage.getItem('apiKey_'+p);
-    if(saved) document.getElementById('apiKey_'+p).value = saved;
-  });
-  const savedModel = localStorage.getItem('geminiModel');
-  if(savedModel) document.getElementById('geminiModelInput').value = savedModel;
-  switchProvider(currentProvider);
-  document.querySelectorAll('.provider-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('tab_'+currentProvider).classList.add('active');
-  document.querySelectorAll('.provider-panel').forEach(p=>p.style.display='none');
-  document.getElementById('panel_'+currentProvider).style.display='block';
-});
+function updateCurrentModelBadge(){
+  document.getElementById('currentModelBadge').textContent = `বর্তমান মডেল: ${GEMINI_MODEL}`;
+  document.getElementById('modelNameInput').value = GEMINI_MODEL;
+}
 
-/* ========================= GEMINI MODEL LIST ========================= */
-async function listGeminiModels(){
-  const key = document.getElementById('apiKey_gemini').value.trim();
-  if(!key){ alert('প্রথমে Gemini API Key দিন!'); return; }
-  const box = document.getElementById('geminiModelsBox');
-  box.innerHTML = 'মডেল লোড হচ্ছে...';
+async function loadRemoteConfig(){
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+    const doc = await db.collection('config').doc('apiSettings').get();
+    if(!doc.exists){
+      throw new Error('apiSettings ডকুমেন্ট পাওয়া যায়নি');
+    }
+    const data = doc.data();
+    if(!data.geminiKey){
+      throw new Error('geminiKey ফিল্ড খালি');
+    }
+    GEMINI_KEY = data.geminiKey;
+    DEFAULT_REMOTE_MODEL = data.geminiModel || "gemini-2.0-flash";
+
+    const savedModel = localStorage.getItem(LOCAL_MODEL_KEY);
+    GEMINI_MODEL = savedModel ? savedModel : DEFAULT_REMOTE_MODEL;
+
+    updateCurrentModelBadge();
+
+    CONFIG_READY = true;
+    setBanner('ok', '✅ সিস্টেম প্রস্তুত');
+    setButtonsEnabled(true);
+    setTimeout(()=>{
+      const b = document.getElementById('globalBanner');
+      b.style.display='none';
+    }, 2500);
+  }catch(err){
+    console.error(err);
+    CONFIG_READY = false;
+    setBanner('err', '❌ সিস্টেম কনফিগারেশন লোড করা যায়নি। পরে আবার চেষ্টা করুন। (' + err.message + ')');
+    setButtonsEnabled(false);
+  }
+}
+loadRemoteConfig();
+
+/* ================= MODEL SELECTION (USER-SIDE) ================= */
+async function listAvailableModels(){
+  const statusEl = document.getElementById('modelSettingsStatus');
+  const listEl = document.getElementById('modelList');
+  listEl.innerHTML = '';
+
+  if(!CONFIG_READY){
+    statusEl.textContent = '❌ সিস্টেম এখনো প্রস্তুত না।';
+    return;
+  }
+
+  statusEl.innerHTML = '<span class="spinner" style="border-color:var(--primary);border-top-color:transparent;"></span> মডেল লিস্ট আনা হচ্ছে...';
+
+  try{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`);
+    if(!res.ok) throw new Error('মডেল লিস্ট আনা যায়নি (' + res.status + ')');
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error?.message || 'সমস্যা হয়েছে');
-    const usable = (data.models||[]).filter(m => m.supportedGenerationMethods?.includes('generateContent'));
-    if(usable.length===0){ box.innerHTML='কোনো ব্যবহারযোগ্য মডেল পাওয়া যায়নি'; return; }
-    box.innerHTML = '';
-    usable.forEach(m=>{
-      const name = m.name.replace('models/','');
-      const btn = document.createElement('button');
-      btn.type='button';
-      btn.className='model-btn';
-      btn.innerText = name;
-      btn.onclick = ()=> selectGeminiModel(name);
-      box.appendChild(btn);
+
+    const models = (data.models || []).filter(m =>
+      m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
+    );
+
+    if(models.length === 0){
+      statusEl.textContent = '⚠️ কোনো ব্যবহারযোগ্য মডেল পাওয়া যায়নি।';
+      return;
+    }
+
+    statusEl.textContent = `✅ ${models.length} টি মডেল পাওয়া গেছে। নিচ থেকে একটি বেছে নিন:`;
+
+    models.forEach(m=>{
+      const shortName = m.name.replace('models/', '');
+      const chip = document.createElement('div');
+      chip.className = 'model-chip' + (shortName === GEMINI_MODEL ? ' active' : '');
+      chip.textContent = shortName;
+      chip.onclick = ()=>{
+        document.getElementById('modelNameInput').value = shortName;
+        document.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('active'));
+        chip.classList.add('active');
+      };
+      listEl.appendChild(chip);
     });
   }catch(err){
-    box.innerHTML = 'সমস্যা: '+err.message;
+    console.error(err);
+    statusEl.textContent = '❌ সমস্যা হয়েছে: ' + err.message;
   }
 }
 
-function selectGeminiModel(name){
-  document.getElementById('geminiModelInput').value = name;
-  localStorage.setItem('geminiModel', name);
-  alert('মডেল সিলেক্ট হয়েছে: '+name);
+function saveModelPreference(){
+  const val = document.getElementById('modelNameInput').value.trim();
+  if(!val){
+    alert('মডেল নাম দিন।');
+    return;
+  }
+  localStorage.setItem(LOCAL_MODEL_KEY, val);
+  GEMINI_MODEL = val;
+  updateCurrentModelBadge();
+  document.getElementById('modelSettingsStatus').textContent = `✅ "${val}" মডেল সংরক্ষণ করা হয়েছে। এখন থেকে এটি ব্যবহার হবে।`;
 }
 
-/* ========================= AI CALLS ========================= */
-async function callGemini(systemPrompt, userPrompt){
-  const key = localStorage.getItem('apiKey_gemini');
-  const model = localStorage.getItem('geminiModel') || 'gemini-2.0-flash';
-  if(!key) throw new Error('Gemini API Key দিন (উপরে সেটআপ অংশে)');
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-  const res = await fetch(url, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
-      generationConfig: { temperature: 0.4 }
-    })
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error?.message || 'Gemini API Error');
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if(!text) throw new Error('Gemini থেকে কোনো রেসপন্স পাওয়া যায়নি');
-  return text;
+function resetModelPreference(){
+  localStorage.removeItem(LOCAL_MODEL_KEY);
+  GEMINI_MODEL = DEFAULT_REMOTE_MODEL;
+  updateCurrentModelBadge();
+  document.getElementById('modelSettingsStatus').textContent = `↩️ ডিফল্ট মডেলে ফিরে যাওয়া হয়েছে: ${DEFAULT_REMOTE_MODEL}`;
+  document.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('active'));
 }
 
-async function callOpenAICompatible(systemPrompt, userPrompt, url, key, model){
-  if(!key) throw new Error('API Key দিন');
-  const res = await fetch(url, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${key}` },
-    body: JSON.stringify({
-      model: model,
-      messages: [
-        {role:'system', content: systemPrompt},
-        {role:'user', content: userPrompt}
-      ],
-      temperature: 0.4
-    })
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error?.message || ('API Error: '+res.status));
-  return data.choices?.[0]?.message?.content || '';
-}
+async function testModelConnection(){
+  const statusEl = document.getElementById('modelSettingsStatus');
+  const modelToTest = document.getElementById('modelNameInput').value.trim() || GEMINI_MODEL;
 
-async function callAI(systemPrompt, userPrompt){
-  if(currentProvider==='gemini') return await callGemini(systemPrompt, userPrompt);
-  if(currentProvider==='openrouter') return await callOpenAICompatible(systemPrompt, userPrompt, 'https://openrouter.ai/api/v1/chat/completions', localStorage.getItem('apiKey_openrouter'), 'meta-llama/llama-3.1-8b-instruct:free');
-  if(currentProvider==='openai') return await callOpenAICompatible(systemPrompt, userPrompt, 'https://api.openai.com/v1/chat/completions', localStorage.getItem('apiKey_openai'), 'gpt-4o-mini');
-  throw new Error('কোনো Provider সিলেক্ট করা নেই');
-}
+  if(!CONFIG_READY){
+    statusEl.textContent = '❌ সিস্টেম এখনো প্রস্তুত না।';
+    return;
+  }
 
-async function testApiConnection(){
-  const status = document.getElementById('apiTestStatus');
-  status.className='status show loading';
-  status.innerText='টেস্ট করা হচ্ছে...';
+  statusEl.innerHTML = `<span class="spinner" style="border-color:var(--primary);border-top-color:transparent;"></span> "${modelToTest}" টেস্ট করা হচ্ছে...`;
+
   try{
-    const result = await callAI('তুমি একটা সহায়ক।', 'শুধু "OK" লিখে জবাব দাও।');
-    status.className='status show success';
-    status.innerText='সফল! API কাজ করছে। রেসপন্স: '+result.substring(0,50);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent?key=${GEMINI_KEY}`;
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{role:'user', parts:[{text:'শুধু "OK" লিখে উত্তর দাও।'}]}]
+      })
+    });
+    if(!res.ok){
+      const errText = await res.text();
+      throw new Error(`স্ট্যাটাস ${res.status}: ${errText.substring(0,150)}`);
+    }
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!text) throw new Error('কোনো উত্তর পাওয়া যায়নি');
+
+    statusEl.textContent = `✅ "${modelToTest}" মডেল সফলভাবে কাজ করছে! (উত্তর: ${text.trim().substring(0,50)})`;
   }catch(err){
-    status.className='status show error';
-    let msg = err.message || '';
-    if(msg.includes('API_KEY_INVALID') || msg.includes('401')) msg = 'API Key ভুল! আবার চেক করুন।';
-    else if(msg.includes('429') || msg.toLowerCase().includes('quota')) msg = 'Quota শেষ অথবা Rate limit! একটু পরে চেষ্টা করুন।';
-    else if(msg.includes('404')) msg = 'এই মডেল নামটা পাওয়া যায়নি। "কোন মডেল কাজ করে দেখুন" বাটন চাপুন।';
-    status.innerText = msg || ('সমস্যা হয়েছে: '+err.message);
+    console.error(err);
+    statusEl.textContent = `❌ "${modelToTest}" মডেল কাজ করছে না: ${err.message}`;
   }
 }
 
-/* ========================= JOB IMAGE OCR ========================= */
-async function handleJobImage(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const status = document.getElementById('jobOcrStatus');
-  status.className='status show loading';
-  status.innerText='ছবি থেকে লেখা বের করা হচ্ছে...';
-  try{
-    const result = await Tesseract.recognize(file, 'eng+ben', {
-      logger: m => {
-        if(m.status==='recognizing text'){
-          status.innerText = `লেখা বের করা হচ্ছে... ${(m.progress*100).toFixed(0)}%`;
+/* ================= GEMINI CALL (WITH AUTO-RETRY) ================= */
+function sleep(ms){ return new Promise(res => setTimeout(res, ms)); }
+
+async function callAI(systemPrompt, userPrompt, onRetryMsg){
+  if(!CONFIG_READY){
+    throw new Error('সিস্টেম এখনো প্রস্তুত না। একটু পর আবার চেষ্টা করুন।');
+  }
+
+  const maxRetries = 3;
+  const delays = [2000, 4000, 7000];
+
+  let lastError = null;
+
+  for(let attempt = 0; attempt <= maxRetries; attempt++){
+    try{
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+      const body = {
+        contents: [
+          { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }
+        ]
+      };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+
+      if(!res.ok){
+        const errText = await res.text();
+        const isOverloaded = res.status === 503 || res.status === 429;
+
+        if(isOverloaded && attempt < maxRetries){
+          lastError = new Error(`Gemini API Error (${res.status}): ${errText}`);
+          if(onRetryMsg){
+            onRetryMsg(`⏳ সার্ভার ব্যস্ত আছে, আবার চেষ্টা করা হচ্ছে... (${attempt+1}/${maxRetries})`);
+          }
+          await sleep(delays[attempt]);
+          continue;
         }
+        throw new Error(`Gemini API Error (${res.status}): ${errText}`);
       }
-    });
-    document.getElementById('jobText').value = result.data.text;
-    status.className='status show success';
-    status.innerText='ছবি থেকে টেক্সট বের করা সম্পন্ন! নিচে চেক করুন।';
-  }catch(err){
-    status.className='status show error';
-    status.innerText='সমস্যা হয়েছে: '+err.message;
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(!text) throw new Error('Gemini থেকে কোনো উত্তর পাওয়া যায়নি');
+      return text;
+
+    }catch(err){
+      lastError = err;
+      const isNetworkIssue = err.message.includes('503') || err.message.includes('429') || err.message.includes('UNAVAILABLE');
+      if(isNetworkIssue && attempt < maxRetries){
+        if(onRetryMsg){
+          onRetryMsg(`⏳ সার্ভার ব্যস্ত আছে, আবার চেষ্টা করা হচ্ছে... (${attempt+1}/${maxRetries})`);
+        }
+        await sleep(delays[attempt]);
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error('অজানা সমস্যা হয়েছে');
+}
+
+function extractJson(text){
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if(start === -1 || end === -1) throw new Error('JSON ফরম্যাট পাওয়া যায়নি');
+  return JSON.parse(cleaned.substring(start, end+1));
+}
+
+/* ================= OCR (JOB IMAGE) ================= */
+function handleJobImage(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    lastOcrImageDataUrl = e.target.result;
+    runOCR(lastOcrImageDataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+function retryOCR(){
+  if(lastOcrImageDataUrl){
+    runOCR(lastOcrImageDataUrl);
   }
 }
 
-/* ========================= CV PDF PARSING ========================= */
-let cvFullText = '';
-let cvFile = null;
+function preprocessImage(dataUrl){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = function(){
+      const targetWidth = 1600;
+      const w = img.width < targetWidth ? targetWidth : img.width;
+      const h = img.height * (w / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
 
-async function handleCvUpload(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  cvFile = file;
-  const status = document.getElementById('cvStatus');
-  status.className='status show loading';
-  status.innerText='CV থেকে টেক্সট বের করা হচ্ছে...';
+      const imgData = ctx.getImageData(0,0,w,h);
+      const d = imgData.data;
+      const contrast = 40;
+      const factor = (259*(contrast+255)) / (255*(259-contrast));
+      for(let i=0;i<d.length;i+=4){
+        let gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+        gray = factor * (gray - 128) + 128;
+        gray = Math.max(0, Math.min(255, gray));
+        d[i] = d[i+1] = d[i+2] = gray;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.src = dataUrl;
+  });
+}
+
+async function runOCR(dataUrl){
+  const statusEl = document.getElementById('ocrStatus');
+  const warnBox = document.getElementById('ocrWarnBox');
+  warnBox.style.display = 'none';
+  statusEl.textContent = '⏳ ছবি প্রসেস হচ্ছে...';
+
   try{
+    const processedUrl = await preprocessImage(dataUrl);
+    const lang = document.getElementById('ocrLanguage').value;
+    const psm = document.getElementById('ocrPsm').value;
+
+    statusEl.textContent = '⏳ OCR চলছে, একটু অপেক্ষা করুন...';
+
+    const result = await Tesseract.recognize(processedUrl, lang, {
+      logger: m=>{
+        if(m.status === 'recognizing text'){
+          statusEl.textContent = `⏳ OCR চলছে... ${Math.round(m.progress*100)}%`;
+        }
+      },
+      tessedit_pageseg_mode: psm
+    });
+
+    const text = result.data.text.trim();
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+    document.getElementById('jobText').value = text;
+
+    if(wordCount < 15){
+      statusEl.textContent = `⚠️ OCR শেষ হয়েছে কিন্তু মাত্র ${wordCount} শব্দ পাওয়া গেছে।`;
+      warnBox.style.display = 'block';
+    }else{
+      statusEl.textContent = `✅ OCR সম্পন্ন (${wordCount} শব্দ পাওয়া গেছে)`;
+    }
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = '❌ OCR এ সমস্যা হয়েছে: ' + err.message;
+    warnBox.style.display = 'block';
+  }
+}
+
+/* ================= CV UPLOAD (PDF) ================= */
+async function handleCvUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  uploadedCvFile = file;
+  uploadedCvBlobUrl = URL.createObjectURL(file);
+
+  const statusEl = document.getElementById('cvStatus');
+  statusEl.textContent = '⏳ CV পড়া হচ্ছে...';
+
+  try{
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
-    let fullText = '';
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+
+    let fullText = "";
     for(let i=1;i<=pdf.numPages;i++){
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      fullText += reconstructLayout(content.items) + '\n';
+      fullText += reconstructLayout(content.items) + "\n";
     }
-    cvFullText = fullText;
-    status.className='status show success';
-    status.innerText=`CV থেকে টেক্সট বের করা হয়েছে (${pdf.numPages} পৃষ্ঠা) — ফাইল: ${file.name}`;
+
+    window.__cvText = fullText.trim();
+    statusEl.textContent = `✅ CV পড়া সম্পন্ন (${pdf.numPages} পৃষ্ঠা)`;
   }catch(err){
-    status.className='status show error';
-    status.innerText='সমস্যা: '+err.message;
+    console.error(err);
+    statusEl.textContent = '❌ CV পড়তে সমস্যা হয়েছে: ' + err.message;
   }
 }
 
 function reconstructLayout(items){
-  const lines = {};
+  if(!items.length) return "";
+  const lines = [];
+  let currentLine = [];
+  let lastY = items[0].transform[5];
+
   items.forEach(item=>{
-    const y = Math.round(item.transform[5]);
-    if(!lines[y]) lines[y]=[];
-    lines[y].push(item);
+    const y = item.transform[5];
+    if(Math.abs(y - lastY) > 3){
+      lines.push(currentLine.map(i=>i.str).join(' '));
+      currentLine = [];
+      lastY = y;
+    }
+    currentLine.push(item);
   });
-  const sortedY = Object.keys(lines).map(Number).sort((a,b)=>b-a);
-  let text='';
-  sortedY.forEach(y=>{
-    const line = lines[y].sort((a,b)=>a.transform[4]-b.transform[4]);
-    text += line.map(i=>i.str).join(' ') + '\n';
-  });
-  return text;
+  if(currentLine.length) lines.push(currentLine.map(i=>i.str).join(' '));
+  return lines.join('\n');
 }
 
-/* ========================= ANALYZE WITH AI ========================= */
-function extractJson(raw){
-  let text = raw.trim();
-  text = text.replace(/```json/gi,'').replace(/```/g,'').trim();
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-  if(start===-1||end===-1) throw new Error('AI থেকে বৈধ JSON পাওয়া যায়নি, আবার চেষ্টা করুন।');
-  return JSON.parse(text.substring(start, end+1));
-}
-
+/* ================= AI ANALYZE ================= */
 async function analyzeWithAI(){
   const jobText = document.getElementById('jobText').value.trim();
-  if(!jobText){ alert('জব সার্কুলার টেক্সট দিন বা ছবি আপলোড করুন!'); return; }
-  if(!cvFullText){ alert('প্রথমে CV (PDF) আপলোড করুন!'); return; }
+  const cvText = window.__cvText || "";
+  const statusEl = document.getElementById('analyzeStatus');
 
-  const status = document.getElementById('analyzeStatus');
-  status.className='status show loading';
-  status.innerText='AI দিয়ে বিশ্লেষণ করা হচ্ছে...';
+  if(!jobText){
+    alert('জব সার্কুলার টেক্সট দিন অথবা ছবি আপলোড করুন।');
+    return;
+  }
+  if(!cvText){
+    alert('CV (PDF) আপলোড করুন।');
+    return;
+  }
 
-  const systemPrompt = `তুমি একজন দক্ষ HR ডাটা এক্সট্র্যাক্টর। নিচের Job Circular এবং CV থেকে তথ্য বের করে শুধুমাত্র নিচের ফরম্যাটে একটা বৈধ JSON রিটার্ন করবে, অন্য কোনো টেক্সট/ব্যাখ্যা দেবে না, markdown code fence ও দেবে না:
+  statusEl.innerHTML = '<span class="spinner" style="border-color:var(--primary);border-top-color:transparent;"></span> বিশ্লেষণ চলছে...';
+
+  const systemPrompt = `তুমি একজন HR ডেটা এক্সট্র্যাকশন এক্সপার্ট। নিচের Job Circular এবং CV থেকে তথ্য বের করে শুধুমাত্র নিচের JSON ফরম্যাটে উত্তর দাও (কোনো markdown, কোনো অতিরিক্ত ব্যাখ্যা ছাড়া শুধু JSON)। 
+
+গুরুত্বপূর্ণ: Job Circular বা CV যে ভাষাতেই থাকুক না কেন (বাংলা বা ইংরেজি), JSON এর ভ্যালুগুলো (company, position, requirements ইত্যাদি) সবসময় ইংরেজিতে লিখবে।
+
 {
-  "job": {"company":"", "position":"", "email":"", "experience_required":"", "requirements":"", "location":""},
-  "candidate": {"name":"", "email":"", "phone":"", "address":"", "designation":"", "experience":"", "skills":"", "education":""}
+  "job": {
+    "company": "",
+    "position": "",
+    "email": "",
+    "experience_required": "",
+    "requirements": "",
+    "location": ""
+  },
+  "candidate": {
+    "name": "",
+    "email": "",
+    "phone": "",
+    "address": "",
+    "designation": "",
+    "experience": "",
+    "skills": "",
+    "education": ""
+  }
 }
-যদি কোনো তথ্য খুঁজে না পাও, খালি স্ট্রিং রাখো। অনুমান করে ভুল তথ্য বসিও না।`;
+তথ্য না পাওয়া গেলে ফিল্ড খালি স্ট্রিং রাখো। অনুমান করে ভুল তথ্য বসিও না। Name যে ভাষায় আছে সে ভাষাতেই রাখো (নাম অনুবাদ করার দরকার নেই)।`;
 
-  const userPrompt = `=== JOB CIRCULAR ===\n${jobText}\n\n=== CANDIDATE CV ===\n${cvFullText}`;
+  const userPrompt = `JOB CIRCULAR:\n${jobText}\n\nCV TEXT:\n${cvText}`;
 
   try{
-    const raw = await callAI(systemPrompt, userPrompt);
-    const json = extractJson(raw);
+    const response = await callAI(systemPrompt, userPrompt, (msg)=>{ statusEl.textContent = msg; });
+    const json = extractJson(response);
 
-    document.getElementById('companyName').value = json.job.company || '';
-    document.getElementById('positionName').value = json.job.position || '';
-    document.getElementById('hrEmail').value = json.job.email || '';
-    document.getElementById('experienceRequired').value = json.job.experience_required || '';
-    document.getElementById('requirementsText').value = json.job.requirements || '';
-    document.getElementById('companyLocation').value = json.job.location || '';
+    const job = json.job || {};
+    const cand = json.candidate || {};
 
-    document.getElementById('candidateName').value = json.candidate.name || '';
-    document.getElementById('candidateEmail').value = json.candidate.email || '';
-    document.getElementById('candidatePhone').value = json.candidate.phone || '';
-    document.getElementById('candidateAddress').value = json.candidate.address || '';
-    document.getElementById('candidateDesignation').value = json.candidate.designation || '';
-    document.getElementById('candidateExperience').value = json.candidate.experience || '';
-    document.getElementById('candidateSkills').value = json.candidate.skills || '';
-    document.getElementById('candidateEducation').value = json.candidate.education || '';
+    document.getElementById('jobCompany').value = job.company || '';
+    document.getElementById('jobPosition').value = job.position || '';
+    document.getElementById('jobEmail').value = job.email || '';
+    document.getElementById('jobLocation').value = job.location || '';
+    document.getElementById('jobRequirements').value = job.requirements || '';
+    document.getElementById('jobExperience').value = job.experience_required || '';
 
-    document.getElementById('toEmail').value = json.job.email || '';
-    document.getElementById('subjectLine').value = `Application for the position of ${json.job.position || ''} at ${json.job.company || ''}`;
+    document.getElementById('candName').value = cand.name || '';
+    document.getElementById('candEmail').value = cand.email || '';
+    document.getElementById('candPhone').value = cand.phone || '';
+    document.getElementById('candAddress').value = cand.address || '';
+    document.getElementById('candDesignation').value = cand.designation || '';
+    document.getElementById('candExperience').value = cand.experience || '';
+    document.getElementById('candSkills').value = cand.skills || '';
+    document.getElementById('candEducation').value = cand.education || '';
 
-    status.className='status show success';
-    status.innerText='বিশ্লেষণ সম্পন্ন! উপরের তথ্য চেক করে প্রয়োজনে ঠিক করে নিন, তারপর Cover Letter ও মেইল বানান।';
+    document.getElementById('mailTo').value = job.email || '';
+
+    statusEl.textContent = '✅ বিশ্লেষণ সম্পন্ন! নিচে তথ্য যাচাই করে প্রয়োজনে এডিট করুন।';
   }catch(err){
-    status.className='status show error';
-    status.innerText='সমস্যা: '+err.message;
+    console.error(err);
+    statusEl.textContent = '❌ সমস্যা হয়েছে: ' + err.message;
   }
 }
 
-/* ========================= COMMON: get job/candidate info ========================= */
+/* ================= HELPERS ================= */
 function getJobInfo(){
   return {
-    company: document.getElementById('companyName').value,
-    position: document.getElementById('positionName').value,
-    requirements: document.getElementById('requirementsText').value,
-    experience_required: document.getElementById('experienceRequired').value,
-    location: document.getElementById('companyLocation').value
+    company: document.getElementById('jobCompany').value.trim(),
+    position: document.getElementById('jobPosition').value.trim(),
+    email: document.getElementById('jobEmail').value.trim(),
+    location: document.getElementById('jobLocation').value.trim(),
+    requirements: document.getElementById('jobRequirements').value.trim(),
+    experience_required: document.getElementById('jobExperience').value.trim()
   };
 }
 function getCandidateInfo(){
   return {
-    name: document.getElementById('candidateName').value,
-    email: document.getElementById('candidateEmail').value,
-    phone: document.getElementById('candidatePhone').value,
-    address: document.getElementById('candidateAddress').value,
-    designation: document.getElementById('candidateDesignation').value,
-    experience: document.getElementById('candidateExperience').value,
-    skills: document.getElementById('candidateSkills').value,
-    education: document.getElementById('candidateEducation').value
+    name: document.getElementById('candName').value.trim(),
+    email: document.getElementById('candEmail').value.trim(),
+    phone: document.getElementById('candPhone').value.trim(),
+    address: document.getElementById('candAddress').value.trim(),
+    designation: document.getElementById('candDesignation').value.trim(),
+    experience: document.getElementById('candExperience').value.trim(),
+    skills: document.getElementById('candSkills').value.trim(),
+    education: document.getElementById('candEducation').value.trim()
   };
 }
 
-/* ========================= COVER LETTER (professional format) ========================= */
-function buildCoverLetterText(bodyParas, jobInfo, candidateInfo){
-  const dateStr = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
-  const location = (jobInfo.location || '').trim();
+/* ================= COVER LETTER (ALWAYS ENGLISH) ================= */
+function buildCoverLetterText(bodyText, job, cand){
+  const today = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
 
-  let header = `${candidateInfo.name}\nMobile: ${candidateInfo.phone}\nEmail: ${candidateInfo.email}\nDate: ${dateStr}\n\n`;
-  header += `To\nThe Hiring Manager\n${jobInfo.company}`;
-  if(location) header += `\n${location}`;
-  header += `\n\nSubject: Application for the Position of ${jobInfo.position}`;
-  if(location) header += ` – ${location}`;
-  header += `\n\nDear Hiring Manager,\n\n`;
-
-  const footer = `\n\nSincerely,\n${candidateInfo.name}`;
-
-  return header + bodyParas.trim() + footer;
+  let letter = '';
+  letter += `${cand.name || '[Your Name]'}\n`;
+  letter += `${cand.phone || ''}${cand.phone && cand.email ? ' | ' : ''}${cand.email || ''}\n`;
+  letter += `${today}\n\n`;
+  letter += `To\nHiring Manager\n${job.company || '[Company Name]'}\n${job.location || ''}\n\n`;
+  letter += `Subject: Application for the position of ${job.position || '[Position]'}\n\n`;
+  letter += `Dear Hiring Manager,\n\n`;
+  letter += `${bodyText.trim()}\n\n`;
+  letter += `Sincerely,\n${cand.name || '[Your Name]'}`;
+  return letter;
 }
 
 async function generateCoverLetterAI(){
-  const status = document.getElementById('coverLetterStatus');
-  const jobInfo = getJobInfo();
-  const candidateInfo = getCandidateInfo();
+  const job = getJobInfo();
+  const cand = getCandidateInfo();
+  const statusEl = document.getElementById('coverStatus');
 
-  if(!jobInfo.position || !candidateInfo.name){
-    status.className='status show error';
-    status.innerText='প্রথমে "AI দিয়ে বিশ্লেষণ করুন" চেপে তথ্য বের করুন!';
+  if(!cand.name || !job.position){
+    alert('প্রথমে "বিশ্লেষণ করুন" বাটনে ক্লিক করে জব ও ক্যান্ডিডেট তথ্য পূরণ করুন (বা ম্যানুয়ালি লিখুন)।');
     return;
   }
 
-  status.className='status show loading';
-  status.innerText='Cover Letter তৈরি করা হচ্ছে...';
+  statusEl.innerHTML = '<span class="spinner"></span> Cover Letter তৈরি হচ্ছে...';
 
-  const systemPrompt = `তুমি একজন পেশাদার কভার লেটার লেখক। নিচের তথ্য দিয়ে শুধুমাত্র Cover Letter এর মূল বডি প্যারাগ্রাফগুলো লিখো (২৫০-৩০০ শব্দ, ৩-৪টি প্যারাগ্রাফ, ইংরেজিতে)। 
-নিয়ম:
-- "Dear Hiring Manager," লিখবে না (এটা আলাদাভাবে যোগ হবে)
-- "Sincerely" বা কোনো সাইন-অফ লিখবে না
-- কোনো Header/Date/Subject লিখবে না
-- শুধু মূল যুক্তি/বডি কন্টেন্ট দেবে, প্রতি প্যারাগ্রাফের মাঝে একটা ফাঁকা লাইন রাখবে
-- অতিরিক্ত ব্যাখ্যা বা নোট দেবে না`;
+  const systemPrompt = `তুমি একজন প্রফেশনাল কভার লেটার লেখক। নিচের তথ্যের ভিত্তিতে শুধুমাত্র Cover Letter এর বডি অংশ (২৫০-৩০০ শব্দ, ২-৩ প্যারাগ্রাফ) লিখো।
 
-  const userPrompt = `JOB INFO:\nCompany: ${jobInfo.company}\nPosition: ${jobInfo.position}\nRequirements: ${jobInfo.requirements}\nExperience Required: ${jobInfo.experience_required}\n\nCANDIDATE INFO:\nName: ${candidateInfo.name}\nDesignation: ${candidateInfo.designation}\nExperience: ${candidateInfo.experience}\nSkills: ${candidateInfo.skills}\nEducation: ${candidateInfo.education}`;
+অত্যন্ত গুরুত্বপূর্ণ নিয়ম:
+- পুরো টেক্সট অবশ্যই শুধুমাত্র ENGLISH ভাষায় লিখতে হবে (Job Circular বা অন্য কোনো তথ্য বাংলায় থাকলেও, তোমার আউটপুট শুধু ইংরেজিতে হতে হবে)
+- কোনো বাংলা শব্দ বা বাক্য ব্যবহার করবে না
+- কোনো Header, "Dear Hiring Manager", "Sincerely" বা নাম যোগ করবে না — শুধু মূল বডি প্যারাগ্রাফগুলো লিখো
+- প্রফেশনাল, আত্মবিশ্বাসী এবং নির্দিষ্ট (specific) টোনে লিখো`;
+
+  const userPrompt = `Candidate Info:
+Name: ${cand.name}
+Designation: ${cand.designation}
+Experience: ${cand.experience}
+Skills: ${cand.skills}
+Education: ${cand.education}
+
+Job Info:
+Company: ${job.company}
+Position: ${job.position}
+Requirements: ${job.requirements}
+Experience Required: ${job.experience_required}
+
+(Write the cover letter body in English only, regardless of the language used above.)`;
 
   try{
-    const bodyParas = await callAI(systemPrompt, userPrompt);
-    const fullLetter = buildCoverLetterText(bodyParas, jobInfo, candidateInfo);
+    const bodyText = await callAI(systemPrompt, userPrompt, (msg)=>{ statusEl.textContent = msg; });
+    const fullLetter = buildCoverLetterText(bodyText, job, cand);
     document.getElementById('coverLetter').value = fullLetter;
-    status.className='status show success';
-    status.innerText='Cover Letter তৈরি হয়েছে! প্রয়োজনে এডিট করুন, তারপর PDF ডাউনলোড করুন।';
+    statusEl.textContent = '✅ Cover Letter তৈরি সম্পন্ন! প্রয়োজনে এডিট করুন।';
   }catch(err){
-    status.className='status show error';
-    status.innerText='সমস্যা: '+err.message;
+    console.error(err);
+    statusEl.textContent = '❌ সমস্যা হয়েছে: ' + err.message + ' — কিছুক্ষণ পর আবার "Cover Letter তৈরি করুন" ক্লিক করুন।';
   }
 }
 
-/* ========================= MAIL BODY GENERATION (separate from Cover Letter) ========================= */
-async function generateMailBodyAI(){
-  const status = document.getElementById('mailBodyStatus');
-  const jobInfo = getJobInfo();
-  const candidateInfo = getCandidateInfo();
+/* ================= MAIL BODY (MORE ENGAGING, DETAILED, SIGN-OFF WITH CONTACT) ================= */
+function stripSubjectLine(text){
+  let lines = text.split('\n');
+  while(lines.length && (
+    /^\*{0,2}subject\*{0,2}\s*:/i.test(lines[0].trim()) ||
+    lines[0].trim() === ''
+  )){
+    lines.shift();
+  }
+  return lines.join('\n').trim();
+}
 
-  if(!jobInfo.position || !candidateInfo.name){
-    status.className='status show error';
-    status.innerText='প্রথমে "AI দিয়ে বিশ্লেষণ করুন" চেপে তথ্য বের করুন!';
+async function generateMailBodyAI(){
+  const job = getJobInfo();
+  const cand = getCandidateInfo();
+  const statusEl = document.getElementById('mailStatus');
+
+  if(!cand.name || !job.position){
+    alert('প্রথমে "বিশ্লেষণ করুন" বাটনে ক্লিক করে জব ও ক্যান্ডিডেট তথ্য পূরণ করুন।');
     return;
   }
 
-  status.className='status show loading';
-  status.innerText='মেইল তৈরি করা হচ্ছে...';
+  statusEl.innerHTML = '<span class="spinner"></span> মেইল তৈরি হচ্ছে...';
 
-  const systemPrompt = `তুমি একজন পেশাদার। নিচের তথ্য দিয়ে HR-কে পাঠানোর জন্য একটা সংক্ষিপ্ত (৮০-১২০ শব্দের মধ্যে), ভদ্র ও প্রফেশনাল ইংরেজি ইমেইল টেক্সট লেখো। এটা Cover Letter না — এটা ইমেইলের মূল বডি, যেখানে বলা হবে প্রার্থী এই পজিশনের জন্য আগ্রহী, তার CV এবং Cover Letter সংযুক্ত আছে, এবং সাক্ষাৎকারের সুযোগ চাওয়া হবে। "Dear Hiring Manager," দিয়ে শুরু করবে এবং candidate এর নাম, ফোন, ইমেইল দিয়ে sign-off করবে। শুধু ইমেইল টেক্সট দেবে, অতিরিক্ত ব্যাখ্যা দেবে না।`;
+  const contactParts = [];
+  if(cand.email) contactParts.push(cand.email);
+  if(cand.phone) contactParts.push(cand.phone);
+  const contactLine = contactParts.join('\n');
 
-  const userPrompt = `JOB INFO:\nCompany: ${jobInfo.company}\nPosition: ${jobInfo.position}\n\nCANDIDATE INFO:\nName: ${candidateInfo.name}\nDesignation: ${candidateInfo.designation}\nExperience: ${candidateInfo.experience}\nEmail: ${candidateInfo.email}\nPhone: ${candidateInfo.phone}`;
+  const systemPrompt = `তুমি একজন অভিজ্ঞ ক্যারিয়ার কোচ এবং প্রফেশনাল রিক্রুটমেন্ট কমিউনিকেশন লেখক। নিচের তথ্যের ভিত্তিতে HR Manager-কে পাঠানোর জন্য একটি আকর্ষণীয়, প্রভাবশালী (persuasive) এবং তথ্যবহুল ইমেইল বডি লিখো যা HR-কে candidate সম্পর্কে আগ্রহী করে তুলবে।
+
+অত্যন্ত গুরুত্বপূর্ণ নিয়ম:
+- পুরো মেইল অবশ্যই শুধুমাত্র ENGLISH ভাষায় লিখতে হবে
+- দৈর্ঘ্য: ১৩০-১৭০ শব্দ, ৩টি ছোট প্যারাগ্রাফে বিভক্ত:
+  ১ম প্যারাগ্রাফ: আকর্ষণীয়ভাবে শুরু করো — শুধু "I am writing to express interest" না লিখে, candidate এর অভিজ্ঞতা/দক্ষতা এবং পদের সাথে সংযোগ দেখিয়ে একটা আত্মবিশ্বাসী ও নির্দিষ্ট (specific) সূচনা করো
+  ২য় প্যারাগ্রাফ: candidate এর সবচেয়ে প্রাসঙ্গিক ২-৩টি অর্জন/দক্ষতা/অভিজ্ঞতা উল্লেখ করো যা এই পদের জন্য মূল্য যোগ করবে — কংক্রিট এবং ফলাফল-ভিত্তিক (result-oriented) ভাষায়, যাতে HR বুঝতে পারে candidate কী ধরনের impact আনতে পারবে
+  ৩য় প্যারাগ্রাফ: আত্মবিশ্বাসী সমাপ্তি — কোম্পানির প্রতি আগ্রহ প্রকাশ, সাক্ষাতকারের জন্য আগ্রহ প্রকাশ, এবং CV ও Cover Letter attach করা আছে উল্লেখ করো
+- কোনো Subject line লিখবে না (যেমন "Subject:" — একদম নিষেধ)
+- সরাসরি "Dear Hiring Manager," দিয়ে শুরু করবে
+- টোন হবে প্রফেশনাল কিন্তু উষ্ণ (warm), আত্মবিশ্বাসী এবং engaging — রোবোটিক বা জেনেরিক শোনাবে না
+- জেনেরিক বাক্য এড়িয়ে চলো (যেমন "I am a hard worker" বা "I am passionate") — এর পরিবর্তে specific skill/experience উল্লেখ করো
+- মেইলের একদম শেষে ঠিক এই ফরম্যাটে sign-off লিখবে (হুবহু এই লাইনগুলো কপি করে বসাও, কোনো পরিবর্তন ছাড়া):
+Best regards,
+${cand.name}
+${contactLine}
+- কোনো markdown symbol (** বা #) ব্যবহার করবে না`;
+
+  const userPrompt = `Candidate Name: ${cand.name}
+Current/Previous Designation: ${cand.designation}
+Position Applying For: ${job.position}
+Company: ${job.company}
+Key Skills: ${cand.skills}
+Experience Summary: ${cand.experience}
+Education: ${cand.education}
+Job Requirements: ${job.requirements}
+
+Use the above details to craft a compelling, specific email body as instructed. Pick the 2-3 most relevant and impressive points from the candidate's background that match the job requirements, and present them in a way that highlights value to the employer.`;
 
   try{
-    const mail = await callAI(systemPrompt, userPrompt);
-    document.getElementById('mailBody').value = mail.trim();
-    status.className='status show success';
-    status.innerText='মেইল তৈরি হয়েছে! প্রয়োজনে এডিট করুন, তারপর পাঠান।';
+    let mailText = await callAI(systemPrompt, userPrompt, (msg)=>{ statusEl.textContent = msg; });
+    mailText = stripSubjectLine(mailText);
+    mailText = mailText.replace(/\*\*/g, '');
+
+    mailText = ensureSignOffContactInfo(mailText, cand, contactLine);
+
+    document.getElementById('mailBody').value = mailText.trim();
+    document.getElementById('mailSubject').value = `Application for the Position of ${job.position || 'the Position'}`;
+    if(job.email) document.getElementById('mailTo').value = job.email;
+    statusEl.textContent = '✅ মেইল টেক্সট তৈরি সম্পন্ন!';
   }catch(err){
-    status.className='status show error';
-    status.innerText='সমস্যা: '+err.message;
+    console.error(err);
+    statusEl.textContent = '❌ সমস্যা হয়েছে: ' + err.message + ' — কিছুক্ষণ পর আবার চেষ্টা করুন।';
   }
 }
 
-/* ========================= COVER LETTER PDF DOWNLOAD ========================= */
+function ensureSignOffContactInfo(text, cand, contactLine){
+  if(!contactLine) return text;
+
+  const lines = text.split('\n');
+  let regardsIdx = -1;
+  for(let i=0;i<lines.length;i++){
+    if(/^best regards,?$/i.test(lines[i].trim())){
+      regardsIdx = i;
+      break;
+    }
+  }
+  if(regardsIdx === -1) return text;
+
+  const nameIdx = regardsIdx + 1;
+  const hasName = lines[nameIdx] && lines[nameIdx].trim().length > 0;
+
+  if(!hasName){
+    lines.splice(nameIdx, 0, cand.name || '');
+  }
+
+  const afterNameIdx = nameIdx + 1;
+  const alreadyHasContact = lines[afterNameIdx] && (
+    lines[afterNameIdx].includes(cand.email) || lines[afterNameIdx].includes(cand.phone)
+  );
+
+  if(!alreadyHasContact){
+    const contactLines = contactLine.split('\n');
+    lines.splice(afterNameIdx, 0, ...contactLines);
+  }
+
+  return lines.join('\n');
+}
+
+/* ================= PDF DOWNLOAD ================= */
 function downloadCoverLetterPDF(){
-  const text = document.getElementById('coverLetter').value;
-  if(!text.trim()){ alert('প্রথমে Cover Letter তৈরি করুন!'); return; }
+  const text = document.getElementById('coverLetter').value.trim();
+  const cand = getCandidateInfo();
+
+  if(!text){
+    alert('প্রথমে Cover Letter তৈরি করুন।');
+    return;
+  }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit:'pt', format:'a4' });
-  const marginLeft = 55;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginLeft = 50;
   const marginTop = 60;
-  const maxWidth = 485;
-  const pageBottom = 790;
-  const lineHeight = 16;
+  const maxWidth = 495;
   let y = marginTop;
 
-  const candidateName = (document.getElementById('candidateName').value || '').trim();
-  doc.setFont('times','normal');
+  doc.setFont('times', 'normal');
   doc.setFontSize(11.5);
 
-  const rawLines = text.split('\n');
-  rawLines.forEach((line, idx)=>{
-    const trimmed = line.trim();
-    let isBold = false;
-    if(trimmed === candidateName && candidateName!=='') isBold = true;
-    if(trimmed === 'To') isBold = true;
-    if(trimmed.startsWith('Subject:')) isBold = true;
-
+  const lines = text.split('\n');
+  lines.forEach(line=>{
+    const isBold = (
+      line.startsWith(cand.name) ||
+      line.trim() === 'To' ||
+      line.startsWith('Subject:') ||
+      line.trim() === 'Sincerely,'
+    );
     doc.setFont('times', isBold ? 'bold' : 'normal');
 
-    if(trimmed === ''){
-      y += lineHeight;
+    if(line.trim() === ''){
+      y += 14;
       return;
     }
 
     const wrapped = doc.splitTextToSize(line, maxWidth);
     wrapped.forEach(wLine=>{
-      if(y > pageBottom){
+      if(y > 780){
         doc.addPage();
         y = marginTop;
       }
       doc.text(wLine, marginLeft, y);
-      y += lineHeight;
+      y += 16;
     });
   });
 
-  const fileName = 'Cover_Letter_' + (candidateName ? candidateName.replace(/\s+/g,'_') : 'Application') + '.pdf';
+  const fileName = `Cover_Letter_${(cand.name || 'Candidate').replace(/\s+/g,'_')}.pdf`;
   doc.save(fileName);
 }
 
-/* ========================= DOWNLOAD ORIGINAL CV ========================= */
 function downloadCV(){
-  if(!cvFile) return false;
-  const url = URL.createObjectURL(cvFile);
+  if(!uploadedCvBlobUrl){
+    alert('প্রথমে CV আপলোড করুন।');
+    return;
+  }
   const a = document.createElement('a');
-  a.href = url;
-  a.download = cvFile.name || 'CV.pdf';
+  a.href = uploadedCvBlobUrl;
+  a.download = uploadedCvFile.name || 'CV.pdf';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(()=> URL.revokeObjectURL(url), 2000);
-  return true;
 }
 
-/* ========================= SEND MAIL ========================= */
+/* ================= SEND MAIL (ONLY COVER LETTER PDF AUTO-DOWNLOADS) ================= */
 function sendMail(target){
-  const to = document.getElementById('toEmail').value.trim();
-  const subject = document.getElementById('subjectLine').value.trim();
+  const to = document.getElementById('mailTo').value.trim();
+  const subject = document.getElementById('mailSubject').value.trim();
   const body = document.getElementById('mailBody').value.trim();
 
-  if(!to){ alert('HR এর Email Address দিন!'); return; }
-  if(!body){ alert('প্রথমে "AI দিয়ে মেইল লিখুন" চেপে মেইল তৈরি করুন!'); return; }
+  if(!to){
+    alert('HR Email দিন।');
+    return;
+  }
+  if(!body){
+    alert('প্রথমে মেইল টেক্সট তৈরি করুন।');
+    return;
+  }
+  if(!document.getElementById('coverLetter').value.trim()){
+    alert('প্রথমে Cover Letter তৈরি করুন।');
+    return;
+  }
 
-  const hasCoverLetter = document.getElementById('coverLetter').value.trim().length > 0;
-  const hasCV = !!cvFile;
+  /* শুধুমাত্র Cover Letter PDF অটো-ডাউনলোড হবে (CV না) */
+  downloadCoverLetterPDF();
 
-  // প্রথমে ফাইলগুলো অটো-ডাউনলোড করা হচ্ছে
-  if(hasCoverLetter) downloadCoverLetterPDF();
-  if(hasCV) downloadCV();
-
-  // একটু দেরি করে মেইল উইন্ডো খোলা হচ্ছে (যাতে ডাউনলোড শুরু হওয়ার সময় পায়)
   setTimeout(()=>{
     if(target === 'gmail'){
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(gmailUrl, '_blank');
-    } else {
-      const mailtoLink = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.location.href = mailtoLink;
+      const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(url, '_blank');
+    }else{
+      const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = url;
     }
-
-    if(hasCV || hasCoverLetter){
-      setTimeout(()=>{
-        alert('✅ CV ও Cover Letter PDF আপনার Downloads ফোল্ডারে ডাউনলোড হয়েছে।\n\nমেইল উইন্ডোতে 📎 (Attach) আইকনে ক্লিক করে Downloads ফোল্ডার থেকে দুটো ফাইল সিলেক্ট করে যুক্ত করুন, তারপর Send চাপুন।');
-      }, 600);
-    }
-  }, 500);
+    alert('📎 Cover Letter PDF ডাউনলোড হয়েছে। মেইল কম্পোজ উইন্ডোতে এটি এবং আপনার CV (আলাদাভাবে ডাউনলোড করে) ম্যানুয়ালি অ্যাটাচ করে দিন।');
+  }, 600);
 }
 
+/* ================= COPY HELPERS ================= */
 function copyCoverLetter(){
   const text = document.getElementById('coverLetter').value;
-  navigator.clipboard.writeText(text).then(()=> alert('Cover Letter কপি হয়েছে!'));
+  if(!text){ alert('কপি করার কিছু নেই।'); return; }
+  navigator.clipboard.writeText(text).then(()=> alert('✅ কপি হয়েছে!'));
 }
-
 function copyMailBody(){
   const text = document.getElementById('mailBody').value;
-  navigator.clipboard.writeText(text).then(()=> alert('মেইল টেক্সট কপি হয়েছে!'));
+  if(!text){ alert('কপি করার কিছু নেই।'); return; }
+  navigator.clipboard.writeText(text).then(()=> alert('✅ কপি হয়েছে!'));
 }
-
 function copyToEmail(){
-  const text = document.getElementById('toEmail').value;
-  navigator.clipboard.writeText(text).then(()=> alert('Email কপি হয়েছে!'));
+  const text = document.getElementById('mailTo').value;
+  if(!text){ alert('কপি করার কিছু নেই।'); return; }
+  navigator.clipboard.writeText(text).then(()=> alert('✅ কপি হয়েছে!'));
 }
 </script>
-
 </body>
 </html>
