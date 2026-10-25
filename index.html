@@ -370,6 +370,51 @@ textarea:focus, input:focus, select:focus{
   border:1px solid #d9dcfb;
 }
 
+/* ===== Match Score ===== */
+.match-score-header{
+  font-size:26px;
+  font-weight:800;
+  color:var(--secondary);
+  margin-bottom:10px;
+}
+.match-score-header span{
+  background:var(--grad);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.match-bar-bg{
+  width:100%;
+  height:14px;
+  background:#eef0f5;
+  border-radius:999px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.match-bar-fill{
+  height:100%;
+  border-radius:999px;
+  width:0%;
+  transition:width .7s ease, background .3s ease;
+  background:var(--grad);
+}
+.tag-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+  min-height:28px;
+}
+.tag{
+  padding:5px 11px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.4;
+}
+.tag.matched{background:#dcfce7;color:#166534;border:1px solid #bbf7d0;}
+.tag.missing{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+
 /* ===== Entrance animation ===== */
 @keyframes fadeUp{
   from{opacity:0;transform:translateY(14px);}
@@ -400,6 +445,7 @@ header.main, .card{animation:fadeUp .55s ease both;}
   .btn-group{flex-direction:column;}
   input, select, textarea{font-size:16px !important;}
   .row{flex-direction:column;}
+  .match-score-header{font-size:22px;}
 }
 </style>
 </head>
@@ -555,9 +601,36 @@ header.main, .card{animation:fadeUp .55s ease both;}
     <textarea id="candEducation" rows="2"></textarea>
   </div>
 
+  <!-- CV MATCH SCORE -->
+  <div class="card">
+    <h2>৬. CV ম্যাচ স্কোর</h2>
+    <p class="hint">জব Requirements এর সাথে আপনার CV কতটা মানানসই তা AI দিয়ে যাচাই করুন। (উপরের তথ্য এডিট করার পর আবার চেক করলে নতুন ফলাফল আসবে)</p>
+    <button class="btn" id="genMatchBtn" onclick="generateMatchScoreAI()" disabled>📊 ম্যাচ স্কোর চেক করুন</button>
+    <div class="status-text" id="matchStatus"></div>
+
+    <div id="matchResultBox" style="display:none;margin-top:18px;">
+      <div class="match-score-header"><span id="matchPercentLabel">0%</span> ম্যাচ করেছে</div>
+      <div class="match-bar-bg">
+        <div class="match-bar-fill" id="matchBarFill"></div>
+      </div>
+      <p class="hint" id="matchSummaryText" style="margin-top:12px;font-size:13.5px;"></p>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>✅ ম্যাচ করা স্কিল/যোগ্যতা</label>
+          <div class="tag-list" id="matchedSkillsList"></div>
+        </div>
+        <div>
+          <label>⚠️ অনুপস্থিত/দুর্বল দিক</label>
+          <div class="tag-list" id="missingSkillsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- COVER LETTER -->
   <div class="card">
-    <h2>৬. Cover Letter</h2>
+    <h2>৭. Cover Letter</h2>
     <button class="btn" id="genCoverBtn" onclick="generateCoverLetterAI()" disabled>✨ Cover Letter তৈরি করুন</button>
     <div class="status-text" id="coverStatus"></div>
     <label>Cover Letter (এডিট করা যাবে)</label>
@@ -628,6 +701,7 @@ function setButtonsEnabled(enabled){
   document.getElementById('analyzeBtn').disabled = !enabled;
   document.getElementById('genCoverBtn').disabled = !enabled;
   document.getElementById('genMailBtn').disabled = !enabled;
+  document.getElementById('genMatchBtn').disabled = !enabled;
 }
 
 function updateCurrentModelBadge(){
@@ -1080,6 +1154,111 @@ function getCandidateInfo(){
     skills: document.getElementById('candSkills').value.trim(),
     education: document.getElementById('candEducation').value.trim()
   };
+}
+
+/* ================= CV MATCH SCORE (AI-BASED) ================= */
+async function generateMatchScoreAI(){
+  const job = getJobInfo();
+  const cand = getCandidateInfo();
+  const statusEl = document.getElementById('matchStatus');
+  const box = document.getElementById('matchResultBox');
+
+  if(!job.requirements && !job.position){
+    alert('প্রথমে "বিশ্লেষণ করুন" বাটনে ক্লিক করে অথবা ম্যানুয়ালি জব Requirements/Position পূরণ করুন।');
+    return;
+  }
+  if(!cand.skills && !cand.experience){
+    alert('প্রথমে আপনার Skills/Experience তথ্য পূরণ করুন (বিশ্লেষণ করুন বাটন ব্যবহার করুন বা ম্যানুয়ালি লিখুন)।');
+    return;
+  }
+
+  statusEl.innerHTML = '<span class="spinner"></span> ম্যাচ স্কোর হিসাব করা হচ্ছে...';
+  box.style.display = 'none';
+
+  const systemPrompt = `তুমি একজন অভিজ্ঞ HR রিক্রুটার এবং ATS (Applicant Tracking System) বিশ্লেষক। নিচের Job Requirements এবং Candidate এর CV তথ্যের ভিত্তিতে candidate টি এই পদের জন্য কতটা উপযুক্ত তার একটি বাস্তবসম্মত ম্যাচ পার্সেন্টেজ (০-১০০) হিসাব করো।
+
+শুধুমাত্র নিচের JSON ফরম্যাটে উত্তর দাও (কোনো markdown, কোনো অতিরিক্ত ব্যাখ্যা ছাড়া শুধু JSON), এবং সব ভ্যালু ইংরেজিতে লিখো:
+
+{
+  "match_percentage": 0,
+  "matched_skills": ["", ""],
+  "missing_skills": ["", ""],
+  "summary": ""
+}
+
+নিয়মাবলী:
+- match_percentage একটি সংখ্যা (০-১০০), বাস্তবসম্মত ও কঠোরভাবে মূল্যায়ন করো, সবসময় বেশি নম্বর দিও না — যদি তথ্য কম থাকে বা মিল কম থাকে তাহলে কম নম্বর দাও
+- matched_skills: candidate এর যেসব স্কিল/অভিজ্ঞতা/যোগ্যতা জব রিকোয়ারমেন্টের সাথে স্পষ্টভাবে মিলে যায় (৩-৬টি সংক্ষিপ্ত পয়েন্ট)
+- missing_skills: জব রিকোয়ারমেন্টে যা চাওয়া হয়েছে কিন্তু candidate এর CV তে স্পষ্টভাবে পাওয়া যায়নি বা দুর্বল মনে হয়েছে (২-৫টি সংক্ষিপ্ত পয়েন্ট)
+- summary: candidate এর সার্বিক উপযুক্ততা নিয়ে ১-২ বাক্যে সংক্ষিপ্ত, সৎ ও গঠনমূলক মূল্যায়ন (ইংরেজিতে)`;
+
+  const userPrompt = `Job Position: ${job.position}
+Job Requirements: ${job.requirements}
+Experience Required: ${job.experience_required}
+
+Candidate Designation: ${cand.designation}
+Candidate Experience: ${cand.experience}
+Candidate Skills: ${cand.skills}
+Candidate Education: ${cand.education}`;
+
+  try{
+    const response = await callAI(systemPrompt, userPrompt, (msg)=>{ statusEl.textContent = msg; });
+    const json = extractJson(response);
+
+    let percent = parseInt(json.match_percentage);
+    if(isNaN(percent)) percent = 0;
+    percent = Math.max(0, Math.min(100, percent));
+
+    const matched = Array.isArray(json.matched_skills) ? json.matched_skills : [];
+    const missing = Array.isArray(json.missing_skills) ? json.missing_skills : [];
+    const summary = json.summary || '';
+
+    document.getElementById('matchPercentLabel').textContent = percent + '%';
+
+    const fill = document.getElementById('matchBarFill');
+    fill.style.width = percent + '%';
+    if(percent >= 75){
+      fill.style.background = 'linear-gradient(135deg,#16a34a,#22c55e)';
+    }else if(percent >= 50){
+      fill.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+    }else{
+      fill.style.background = 'linear-gradient(135deg,#dc2626,#ef4444)';
+    }
+
+    document.getElementById('matchSummaryText').textContent = summary;
+
+    const matchedList = document.getElementById('matchedSkillsList');
+    matchedList.innerHTML = '';
+    if(matched.length === 0){
+      matchedList.innerHTML = '<span class="hint">কিছু পাওয়া যায়নি</span>';
+    }else{
+      matched.forEach(s=>{
+        const tag = document.createElement('span');
+        tag.className = 'tag matched';
+        tag.textContent = '✓ ' + s;
+        matchedList.appendChild(tag);
+      });
+    }
+
+    const missingList = document.getElementById('missingSkillsList');
+    missingList.innerHTML = '';
+    if(missing.length === 0){
+      missingList.innerHTML = '<span class="hint">কিছু পাওয়া যায়নি</span>';
+    }else{
+      missing.forEach(s=>{
+        const tag = document.createElement('span');
+        tag.className = 'tag missing';
+        tag.textContent = '✗ ' + s;
+        missingList.appendChild(tag);
+      });
+    }
+
+    box.style.display = 'block';
+    statusEl.textContent = '✅ ম্যাচ স্কোর তৈরি সম্পন্ন!';
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = '❌ সমস্যা হয়েছে: ' + err.message + ' — কিছুক্ষণ পর আবার চেষ্টা করুন।';
+  }
 }
 
 /* ================= COVER LETTER (ALWAYS ENGLISH) ================= */
