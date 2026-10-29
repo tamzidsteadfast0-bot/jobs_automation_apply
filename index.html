@@ -431,6 +431,125 @@ header.main, .card{animation:fadeUp .55s ease both;}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px;border:2px solid var(--bg);}
 ::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
 
+/* ===== Help Floating Button + Modal (NEW) ===== */
+.help-fab{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:500;
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  border:none;
+  background:var(--grad);
+  color:#fff;
+  font-size:24px;
+  cursor:pointer;
+  box-shadow:0 10px 26px rgba(79,70,229,.4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.help-fab:hover{
+  transform:translateY(-3px) scale(1.05);
+  box-shadow:0 14px 32px rgba(79,70,229,.48);
+}
+
+.help-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(15,15,30,.55);
+  backdrop-filter:blur(4px);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+.help-overlay.active{display:flex;}
+
+.help-modal{
+  background:#fff;
+  border-radius:18px;
+  max-width:560px;
+  width:100%;
+  max-height:85vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  animation:fadeUp .25s ease;
+}
+.help-modal-header{
+  background:var(--grad);
+  color:#fff;
+  padding:18px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+}
+.help-modal-header h2{
+  margin:0;
+  font-size:18px;
+}
+.help-close-btn{
+  background:rgba(255,255,255,.2);
+  border:none;
+  color:#fff;
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  font-size:16px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .2s;
+  flex-shrink:0;
+}
+.help-close-btn:hover{background:rgba(255,255,255,.35);}
+.help-modal-body{
+  padding:20px;
+  overflow-y:auto;
+}
+.help-step{
+  display:flex;
+  gap:12px;
+  margin-bottom:16px;
+  align-items:flex-start;
+  line-height:1.5;
+  font-size:14.5px;
+  color:#333;
+}
+.help-step b{color:#1e1b4b;}
+.help-num{
+  flex-shrink:0;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#4f46e5,#06b6d4);
+  color:#fff;
+  font-weight:700;
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.warn-step .help-num{
+  background:linear-gradient(135deg,#f59e0b,#ef4444);
+}
+.help-note{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:10px;
+  padding:12px 14px;
+  font-size:13.5px;
+  color:#92400e;
+  margin-top:8px;
+}
+
 @media(max-width:600px){
   .container{padding:12px;}
   header.main{padding:30px 16px 28px;border-radius:18px;}
@@ -446,12 +565,21 @@ header.main, .card{animation:fadeUp .55s ease both;}
   input, select, textarea{font-size:16px !important;}
   .row{flex-direction:column;}
   .match-score-header{font-size:22px;}
+  .help-fab{
+    width:50px;height:50px;font-size:20px;
+    right:14px;bottom:14px;
+  }
+  .help-modal-header h2{font-size:16px;}
+  .help-step{font-size:13.5px;}
 }
 </style>
 </head>
 <body>
 
 <div id="globalBanner" class="banner loading">⏳ সিস্টেম লোড হচ্ছে...</div>
+
+<!-- Help Floating Button (NEW) -->
+<button class="help-fab" onclick="openHelpModal()" title="ব্যবহার নির্দেশিকা">📖</button>
 
 <div class="container">
   <header class="main">
@@ -463,12 +591,19 @@ header.main, .card{animation:fadeUp .55s ease both;}
   <details class="card">
     <summary>⚙️ AI Model সেটিংস (ঐচ্ছিক)</summary>
     <div class="inner">
-      <p class="hint">API Key কেন্দ্রীয়ভাবে ব্যবস্থাপনা করা হয় — আপনাকে কিছু করতে হবে না। তবে চাইলে আপনার পছন্দের Gemini মডেল বেছে নিতে পারেন। এই সেটিং শুধু আপনার ব্রাউজারে প্রযোজ্য হবে।</p>
+      <p class="hint">API Key কেন্দ্রীয়ভাবে ব্যবস্থাপনা করা হয় — আপনাকে কিছু করতে হবে না। তবে চাইলে AI Provider (Gemini/Groq) ও পছন্দের মডেল বেছে নিতে পারেন। এই সেটিং শুধু আপনার ব্রাউজারে প্রযোজ্য হবে।</p>
 
-      <div class="current-model-badge" id="currentModelBadge">বর্তমান মডেল: লোড হচ্ছে...</div>
+      <div class="current-model-badge" id="currentModelBadge">বর্তমান: লোড হচ্ছে...</div>
+
+      <label>AI Provider বেছে নিন</label>
+      <div class="model-list" id="providerChips">
+        <div class="model-chip" data-provider="gemini" onclick="selectProvider('gemini')">🔵 Gemini</div>
+        <div class="model-chip" data-provider="groq" onclick="selectProvider('groq')">⚡ Groq (দ্রুত, ফ্রি)</div>
+      </div>
+      <p class="hint" id="groqWarnText" style="display:none;color:var(--warn);">⚠️ Groq এখনো কেন্দ্রীয়ভাবে কনফিগার করা হয়নি।</p>
 
       <label>Model Name</label>
-      <input type="text" id="modelNameInput" placeholder="যেমন: gemini-2.0-flash">
+      <input type="text" id="modelNameInput" placeholder="যেমন: gemini-2.0-flash অথবা openai/gpt-oss-120b">
 
       <div class="btn-group">
         <button class="btn outline" onclick="listAvailableModels()">📋 কোন মডেল কাজ করে দেখুন</button>
@@ -667,6 +802,57 @@ header.main, .card{animation:fadeUp .55s ease both;}
 
 </div>
 
+<!-- Help Modal (NEW) -->
+<div id="helpModalOverlay" class="help-overlay" onclick="closeHelpModalOutside(event)">
+  <div class="help-modal">
+    <div class="help-modal-header">
+      <h2>📖 ব্যবহার নির্দেশিকা</h2>
+      <button class="help-close-btn" onclick="closeHelpModal()">✕</button>
+    </div>
+    <div class="help-modal-body">
+      <div class="help-step">
+        <span class="help-num">১</span>
+        <div><b>জব সার্কুলার দিন</b><br>টেক্সট পেস্ট করুন, অথবা ছবি আপলোড করুন (OCR অটো টেক্সট বের করবে)</div>
+      </div>
+      <div class="help-step">
+        <span class="help-num">২</span>
+        <div><b>আপনার CV (PDF) আপলোড করুন</b></div>
+      </div>
+      <div class="help-step">
+        <span class="help-num">৩</span>
+        <div><b>"বিশ্লেষণ করুন" ক্লিক করুন</b><br>AI জব ও CV থেকে সব তথ্য অটো বের করে দেবে</div>
+      </div>
+      <div class="help-step">
+        <span class="help-num">৪</span>
+        <div><b>তথ্য চেক করুন</b><br>"জব তথ্য" ও "আপনার তথ্য" কার্ডে ভুল থাকলে নিজে ঠিক করে নিন (বিশেষত HR Email ও নিজের ইমেইল/ফোন)</div>
+      </div>
+      <div class="help-step">
+        <span class="help-num">৫</span>
+        <div><b>(ঐচ্ছিক) ম্যাচ স্কোর দেখুন</b><br>আপনার CV চাকরির সাথে কতটা মানানসই তা % আকারে দেখাবে</div>
+      </div>
+      <div class="help-step">
+        <span class="help-num">৬</span>
+        <div><b>"Cover Letter তৈরি করুন" ক্লিক করুন</b><br>প্রয়োজনে এডিট করুন → PDF ডাউনলোড করুন</div>
+      </div>
+      <div class="help-step">
+        <span class="help-num">৭</span>
+        <div><b>"মেইল তৈরি করুন" ক্লিক করুন</b><br>HR কে পাঠানোর মেইল বডি অটো লিখে দেবে</div>
+      </div>
+      <div class="help-step">
+        <span class="help-num">৮</span>
+        <div><b>"Gmail/মেইল অ্যাপে পাঠান" ক্লিক করুন</b><br>Cover Letter PDF অটো ডাউনলোড হবে + Gmail/মেইল উইন্ডো খুলে যাবে (To/Subject/Body ভরা থাকবে)</div>
+      </div>
+      <div class="help-step warn-step">
+        <span class="help-num">৯</span>
+        <div><b>⚠️ PDF গুলো মেইলে ম্যানুয়ালি Attach করে Send করুন</b><br>ডাউনলোড হওয়া Cover Letter PDF + আলাদা "CV ডাউনলোড" বাটন দিয়ে CV — দুটোই মেইলে সংযুক্ত করুন</div>
+      </div>
+      <div class="help-note">
+        🔒 <b>নোট:</b> ব্রাউজার সিকিউরিটির কারণে ফাইল অটো-অ্যাটাচ হয় না, তাই এই শেষ ধাপটা ম্যানুয়ালি করতে হয় — মাত্র কয়েক সেকেন্ডের কাজ।
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
@@ -680,9 +866,21 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+/* ---- Gemini ---- */
 let GEMINI_KEY = "";
 let GEMINI_MODEL = "gemini-2.0-flash";
 let DEFAULT_REMOTE_MODEL = "gemini-2.0-flash";
+
+/* ---- Groq ---- */
+let GROQ_KEY = "";
+let GROQ_MODEL = "openai/gpt-oss-120b";
+let DEFAULT_REMOTE_GROQ_MODEL = "openai/gpt-oss-120b";
+
+/* ---- বর্তমানে সক্রিয় প্রোভাইডার ('gemini' | 'groq') ---- */
+let AI_PROVIDER = "gemini";
+/* ---- Settings প্যানেলে যেটা এডিট করা হচ্ছে (সেভ না করা পর্যন্ত AI_PROVIDER পাল্টায় না) ---- */
+let settingsProvider = "gemini";
+
 let CONFIG_READY = false;
 
 let uploadedCvFile = null;
@@ -690,6 +888,8 @@ let uploadedCvBlobUrl = null;
 let lastOcrImageDataUrl = null;
 
 const LOCAL_MODEL_KEY = 'preferredGeminiModel';
+const LOCAL_GROQ_MODEL_KEY = 'preferredGroqModel';
+const LOCAL_PROVIDER_KEY = 'preferredAIProvider';
 
 function setBanner(type, text){
   const b = document.getElementById('globalBanner');
@@ -705,8 +905,32 @@ function setButtonsEnabled(enabled){
 }
 
 function updateCurrentModelBadge(){
-  document.getElementById('currentModelBadge').textContent = `বর্তমান মডেল: ${GEMINI_MODEL}`;
-  document.getElementById('modelNameInput').value = GEMINI_MODEL;
+  const providerLabel = AI_PROVIDER === 'groq' ? '⚡ Groq' : '🔵 Gemini';
+  const activeModel = AI_PROVIDER === 'groq' ? GROQ_MODEL : GEMINI_MODEL;
+  document.getElementById('currentModelBadge').textContent = `বর্তমান: ${providerLabel} — ${activeModel}`;
+  document.getElementById('modelNameInput').value = settingsProvider === 'groq' ? GROQ_MODEL : GEMINI_MODEL;
+}
+
+function renderProviderChips(){
+  const wrap = document.getElementById('providerChips');
+  wrap.querySelectorAll('.model-chip').forEach(c=>{
+    c.classList.toggle('active', c.dataset.provider === settingsProvider);
+  });
+  const warnEl = document.getElementById('groqWarnText');
+  if(settingsProvider === 'groq' && !GROQ_KEY){
+    warnEl.style.display = 'block';
+    warnEl.textContent = '⚠️ Groq এখনো কেন্দ্রীয়ভাবে কনফিগার করা হয়নি (Firestore এ groqKey ফিল্ড নেই)। এডমিনকে জানান।';
+  }else{
+    warnEl.style.display = 'none';
+  }
+}
+
+function selectProvider(p){
+  settingsProvider = p;
+  document.getElementById('modelNameInput').value = p === 'groq' ? GROQ_MODEL : GEMINI_MODEL;
+  document.getElementById('modelList').innerHTML = '';
+  document.getElementById('modelSettingsStatus').textContent = '';
+  renderProviderChips();
 }
 
 async function loadRemoteConfig(){
@@ -722,10 +946,23 @@ async function loadRemoteConfig(){
     GEMINI_KEY = data.geminiKey;
     DEFAULT_REMOTE_MODEL = data.geminiModel || "gemini-2.0-flash";
 
+    GROQ_KEY = data.groqKey || "";
+    DEFAULT_REMOTE_GROQ_MODEL = data.groqModel || "openai/gpt-oss-120b";
+
+    AI_PROVIDER = localStorage.getItem(LOCAL_PROVIDER_KEY) || 'gemini';
+    if(AI_PROVIDER === 'groq' && !GROQ_KEY){
+      AI_PROVIDER = 'gemini'; // groq key না থাকলে নিরাপদে Gemini তে ফলব্যাক
+    }
+    settingsProvider = AI_PROVIDER;
+
     const savedModel = localStorage.getItem(LOCAL_MODEL_KEY);
     GEMINI_MODEL = savedModel ? savedModel : DEFAULT_REMOTE_MODEL;
 
+    const savedGroqModel = localStorage.getItem(LOCAL_GROQ_MODEL_KEY);
+    GROQ_MODEL = savedGroqModel ? savedGroqModel : DEFAULT_REMOTE_GROQ_MODEL;
+
     updateCurrentModelBadge();
+    renderProviderChips();
 
     CONFIG_READY = true;
     setBanner('ok', '✅ সিস্টেম প্রস্তুত');
@@ -743,6 +980,26 @@ async function loadRemoteConfig(){
 }
 loadRemoteConfig();
 
+/* ================= MODEL FILTERING (NEW) ================= */
+/* শুধু আসল চ্যাট-উপযোগী মডেল রাখা, audio/tts/guard/image ইত্যাদি বাদ দেওয়া */
+function isUsableChatModel(id, provider){
+  const lower = id.toLowerCase();
+  if(provider === 'groq'){
+    const BAD_KEYWORDS = ['whisper','tts','guard','orpheus','safeguard','moderation','embed'];
+    return !BAD_KEYWORDS.some(k => lower.includes(k));
+  } else {
+    const BAD_KEYWORDS = ['embedding','aqa','image','imagen','veo','lyria','tts','transcribe',
+      'robotics','computer-use','antigravity','deep-research','banana','omni-flash-preview'];
+    return !BAD_KEYWORDS.some(k => lower.includes(k));
+  }
+}
+
+/* পরীক্ষিত/নির্ভরযোগ্য মডেল — লিস্টে ⭐ দিয়ে সবার উপরে দেখাবে */
+const RECOMMENDED_MODELS = {
+  gemini: ['gemini-2.0-flash','gemini-2.5-flash','gemini-2.5-pro','gemini-1.5-flash'],
+  groq: ['openai/gpt-oss-120b','openai/gpt-oss-20b','qwen/qwen3.8-27b','allam-2-7b']
+};
+
 /* ================= MODEL SELECTION (USER-SIDE) ================= */
 async function listAvailableModels(){
   const statusEl = document.getElementById('modelSettingsStatus');
@@ -753,33 +1010,58 @@ async function listAvailableModels(){
     statusEl.textContent = '❌ সিস্টেম এখনো প্রস্তুত না।';
     return;
   }
+  if(settingsProvider === 'groq' && !GROQ_KEY){
+    statusEl.textContent = '❌ Groq key কনফিগার করা নেই।';
+    return;
+  }
 
   statusEl.innerHTML = '<span class="spinner" style="border-color:var(--primary);border-top-color:transparent;"></span> মডেল লিস্ট আনা হচ্ছে...';
 
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`);
-    if(!res.ok) throw new Error('মডেল লিস্ট আনা যায়নি (' + res.status + ')');
-    const data = await res.json();
+    let models = [];
 
-    const models = (data.models || []).filter(m =>
-      m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
-    );
+    if(settingsProvider === 'gemini'){
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`);
+      if(!res.ok) throw new Error('মডেল লিস্ট আনা যায়নি (' + res.status + ')');
+      const data = await res.json();
+      models = (data.models || [])
+        .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+        .map(m => m.name.replace('models/',''));
+    }else{
+      const res = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${GROQ_KEY}` }
+      });
+      if(!res.ok) throw new Error('মডেল লিস্ট আনা যায়নি (' + res.status + ')');
+      const data = await res.json();
+      models = (data.data || []).map(m => m.id);
+    }
+
+    /* ✅ অডিও/ইমেজ/গার্ড/TTS বাদ দিয়ে শুধু আসল চ্যাট মডেল রাখা */
+    models = models.filter(id => isUsableChatModel(id, settingsProvider));
 
     if(models.length === 0){
-      statusEl.textContent = '⚠️ কোনো ব্যবহারযোগ্য মডেল পাওয়া যায়নি।';
+      statusEl.textContent = '⚠️ কোনো উপযুক্ত চ্যাট মডেল পাওয়া যায়নি।';
       return;
     }
 
-    statusEl.textContent = `✅ ${models.length} টি মডেল পাওয়া গেছে। নিচ থেকে একটি বেছে নিন:`;
+    /* পরীক্ষিত মডেলগুলো আগে, বাকিগুলো পরে */
+    const recommended = RECOMMENDED_MODELS[settingsProvider] || [];
+    models = [
+      ...models.filter(id => recommended.includes(id)),
+      ...models.filter(id => !recommended.includes(id)).sort()
+    ];
 
+    statusEl.textContent = `✅ ${models.length} টি ব্যবহারযোগ্য (চ্যাট-উপযোগী) মডেল পাওয়া গেছে। ⭐ = পরীক্ষিত/স্থিতিশীল। নিচ থেকে একটি বেছে নিন:`;
+
+    const activeModel = settingsProvider === 'groq' ? GROQ_MODEL : GEMINI_MODEL;
     models.forEach(m=>{
-      const shortName = m.name.replace('models/', '');
+      const isRec = recommended.includes(m);
       const chip = document.createElement('div');
-      chip.className = 'model-chip' + (shortName === GEMINI_MODEL ? ' active' : '');
-      chip.textContent = shortName;
+      chip.className = 'model-chip' + (m === activeModel ? ' active' : '');
+      chip.textContent = (isRec ? '⭐ ' : '') + m;
       chip.onclick = ()=>{
-        document.getElementById('modelNameInput').value = shortName;
-        document.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('active'));
+        document.getElementById('modelNameInput').value = m;
+        listEl.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('active'));
         chip.classList.add('active');
       };
       listEl.appendChild(chip);
@@ -796,100 +1078,184 @@ function saveModelPreference(){
     alert('মডেল নাম দিন।');
     return;
   }
-  localStorage.setItem(LOCAL_MODEL_KEY, val);
-  GEMINI_MODEL = val;
+  if(settingsProvider === 'groq' && !GROQ_KEY){
+    alert('Groq key কনফিগার করা নেই, তাই Groq সেভ করা যাবে না।');
+    return;
+  }
+
+  localStorage.setItem(LOCAL_PROVIDER_KEY, settingsProvider);
+  AI_PROVIDER = settingsProvider;
+
+  if(settingsProvider === 'groq'){
+    localStorage.setItem(LOCAL_GROQ_MODEL_KEY, val);
+    GROQ_MODEL = val;
+  }else{
+    localStorage.setItem(LOCAL_MODEL_KEY, val);
+    GEMINI_MODEL = val;
+  }
+
   updateCurrentModelBadge();
-  document.getElementById('modelSettingsStatus').textContent = `✅ "${val}" মডেল সংরক্ষণ করা হয়েছে। এখন থেকে এটি ব্যবহার হবে।`;
+  const providerLabel = settingsProvider === 'groq' ? 'Groq' : 'Gemini';
+  document.getElementById('modelSettingsStatus').textContent = `✅ "${providerLabel}: ${val}" সংরক্ষণ করা হয়েছে। এখন থেকে এটি ব্যবহার হবে।`;
 }
 
 function resetModelPreference(){
   localStorage.removeItem(LOCAL_MODEL_KEY);
+  localStorage.removeItem(LOCAL_GROQ_MODEL_KEY);
+  localStorage.removeItem(LOCAL_PROVIDER_KEY);
+
+  AI_PROVIDER = 'gemini';
+  settingsProvider = 'gemini';
   GEMINI_MODEL = DEFAULT_REMOTE_MODEL;
+  GROQ_MODEL = DEFAULT_REMOTE_GROQ_MODEL;
+
   updateCurrentModelBadge();
-  document.getElementById('modelSettingsStatus').textContent = `↩️ ডিফল্ট মডেলে ফিরে যাওয়া হয়েছে: ${DEFAULT_REMOTE_MODEL}`;
-  document.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('active'));
+  renderProviderChips();
+  document.getElementById('modelList').innerHTML = '';
+  document.getElementById('modelSettingsStatus').textContent = `↩️ ডিফল্টে ফিরে যাওয়া হয়েছে: Gemini — ${DEFAULT_REMOTE_MODEL}`;
 }
 
 async function testModelConnection(){
   const statusEl = document.getElementById('modelSettingsStatus');
-  const modelToTest = document.getElementById('modelNameInput').value.trim() || GEMINI_MODEL;
+  const modelToTest = document.getElementById('modelNameInput').value.trim() || (settingsProvider === 'groq' ? GROQ_MODEL : GEMINI_MODEL);
 
   if(!CONFIG_READY){
     statusEl.textContent = '❌ সিস্টেম এখনো প্রস্তুত না।';
     return;
   }
+  if(settingsProvider === 'groq' && !GROQ_KEY){
+    statusEl.textContent = '❌ Groq key কনফিগার করা নেই।';
+    return;
+  }
 
-  statusEl.innerHTML = `<span class="spinner" style="border-color:var(--primary);border-top-color:transparent;"></span> "${modelToTest}" টেস্ট করা হচ্ছে...`;
+  statusEl.innerHTML = `<span class="spinner" style="border-color:var(--primary);border-top-color:transparent;"></span> "${modelToTest}" (${settingsProvider}) টেস্ট করা হচ্ছে...`;
 
   try{
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent?key=${GEMINI_KEY}`;
-    const res = await fetch(url, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contents:[{role:'user', parts:[{text:'শুধু "OK" লিখে উত্তর দাও।'}]}]
-      })
-    });
-    if(!res.ok){
-      const errText = await res.text();
-      throw new Error(`স্ট্যাটাস ${res.status}: ${errText.substring(0,150)}`);
-    }
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(!text) throw new Error('কোনো উত্তর পাওয়া যায়নি');
+    let text = '';
 
-    statusEl.textContent = `✅ "${modelToTest}" মডেল সফলভাবে কাজ করছে! (উত্তর: ${text.trim().substring(0,50)})`;
+    if(settingsProvider === 'gemini'){
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent?key=${GEMINI_KEY}`;
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contents:[{role:'user', parts:[{text:'শুধু "OK" লিখে উত্তর দাও।'}]}]
+        })
+      });
+      if(!res.ok){
+        const errText = await res.text();
+        throw new Error(`স্ট্যাটাস ${res.status}: ${errText.substring(0,150)}`);
+      }
+      const data = await res.json();
+      text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    }else{
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization': `Bearer ${GROQ_KEY}`
+        },
+        body: JSON.stringify({
+          model: modelToTest,
+          messages: [{role:'user', content:'শুধু "OK" লিখে উত্তর দাও।'}]
+        })
+      });
+      if(!res.ok){
+        const errText = await res.text();
+        throw new Error(`স্ট্যাটাস ${res.status}: ${errText.substring(0,150)}`);
+      }
+      const data = await res.json();
+      text = data?.choices?.[0]?.message?.content;
+    }
+
+    if(!text) throw new Error('কোনো উত্তর পাওয়া যায়নি');
+    statusEl.textContent = `✅ "${modelToTest}" (${settingsProvider}) সফলভাবে কাজ করছে! (উত্তর: ${text.trim().substring(0,50)})`;
   }catch(err){
     console.error(err);
-    statusEl.textContent = `❌ "${modelToTest}" মডেল কাজ করছে না: ${err.message}`;
+    statusEl.textContent = `❌ "${modelToTest}" (${settingsProvider}) কাজ করছে না: ${err.message}`;
   }
 }
 
-/* ================= GEMINI CALL (WITH AUTO-RETRY) ================= */
+/* ================= AI CALL (GEMINI/GROQ) WITH AUTO-RETRY ================= */
 function sleep(ms){ return new Promise(res => setTimeout(res, ms)); }
 
 async function callAI(systemPrompt, userPrompt, onRetryMsg){
   if(!CONFIG_READY){
     throw new Error('সিস্টেম এখনো প্রস্তুত না। একটু পর আবার চেষ্টা করুন।');
   }
+  if(AI_PROVIDER === 'groq' && !GROQ_KEY){
+    throw new Error('Groq key কনফিগার করা নেই। Settings থেকে Gemini এ ফিরে যান।');
+  }
 
   const maxRetries = 3;
   const delays = [2000, 4000, 7000];
-
   let lastError = null;
 
   for(let attempt = 0; attempt <= maxRetries; attempt++){
     try{
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
-      const body = {
-        contents: [
-          { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }
-        ]
-      };
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-      });
+      let text = '';
 
-      if(!res.ok){
-        const errText = await res.text();
-        const isOverloaded = res.status === 503 || res.status === 429;
+      if(AI_PROVIDER === 'groq'){
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'Authorization': `Bearer ${GROQ_KEY}`
+          },
+          body: JSON.stringify({
+            model: GROQ_MODEL,
+            messages: [
+              { role:'system', content: systemPrompt },
+              { role:'user', content: userPrompt }
+            ]
+          })
+        });
 
-        if(isOverloaded && attempt < maxRetries){
-          lastError = new Error(`Gemini API Error (${res.status}): ${errText}`);
-          if(onRetryMsg){
-            onRetryMsg(`⏳ সার্ভার ব্যস্ত আছে, আবার চেষ্টা করা হচ্ছে... (${attempt+1}/${maxRetries})`);
+        if(!res.ok){
+          const errText = await res.text();
+          const isOverloaded = res.status === 503 || res.status === 429;
+          if(isOverloaded && attempt < maxRetries){
+            lastError = new Error(`Groq API Error (${res.status}): ${errText}`);
+            if(onRetryMsg) onRetryMsg(`⏳ সার্ভার ব্যস্ত আছে, আবার চেষ্টা করা হচ্ছে... (${attempt+1}/${maxRetries})`);
+            await sleep(delays[attempt]);
+            continue;
           }
-          await sleep(delays[attempt]);
-          continue;
+          throw new Error(`Groq API Error (${res.status}): ${errText}`);
         }
-        throw new Error(`Gemini API Error (${res.status}): ${errText}`);
+
+        const data = await res.json();
+        text = data?.choices?.[0]?.message?.content;
+
+      }else{
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+        const body = {
+          contents: [
+            { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }
+          ]
+        };
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+
+        if(!res.ok){
+          const errText = await res.text();
+          const isOverloaded = res.status === 503 || res.status === 429;
+          if(isOverloaded && attempt < maxRetries){
+            lastError = new Error(`Gemini API Error (${res.status}): ${errText}`);
+            if(onRetryMsg) onRetryMsg(`⏳ সার্ভার ব্যস্ত আছে, আবার চেষ্টা করা হচ্ছে... (${attempt+1}/${maxRetries})`);
+            await sleep(delays[attempt]);
+            continue;
+          }
+          throw new Error(`Gemini API Error (${res.status}): ${errText}`);
+        }
+
+        const data = await res.json();
+        text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       }
 
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if(!text) throw new Error('Gemini থেকে কোনো উত্তর পাওয়া যায়নি');
+      if(!text) throw new Error(`${AI_PROVIDER === 'groq' ? 'Groq' : 'Gemini'} থেকে কোনো উত্তর পাওয়া যায়নি`);
       return text;
 
     }catch(err){
@@ -1543,6 +1909,21 @@ function copyToEmail(){
   const text = document.getElementById('mailTo').value;
   if(!text){ alert('কপি করার কিছু নেই।'); return; }
   navigator.clipboard.writeText(text).then(()=> alert('✅ কপি হয়েছে!'));
+}
+
+/* ================= HELP MODAL (NEW) ================= */
+function openHelpModal(){
+  document.getElementById('helpModalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeHelpModal(){
+  document.getElementById('helpModalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+function closeHelpModalOutside(event){
+  if(event.target.id === 'helpModalOverlay'){
+    closeHelpModal();
+  }
 }
 </script>
 </body>
